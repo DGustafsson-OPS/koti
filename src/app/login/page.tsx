@@ -1,4 +1,6 @@
 import { Home } from "lucide-react";
+import { getDictionary} from "@/lib/i18n";
+import { getLocale } from "@/lib/i18n/server";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage({
@@ -7,6 +9,8 @@ export default async function LoginPage({
   searchParams: Promise<{ from?: string }>;
 }) {
   const { from } = await searchParams;
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
 
   return (
     <div className="min-h-screen flex">
@@ -21,10 +25,10 @@ export default async function LoginPage({
           </div>
           <div>
             <h2 className="font-display text-4xl font-semibold leading-tight tracking-tight">
-              A permanent memory for your home
+              {dict.auth.heroTitle}
             </h2>
             <p className="text-brand-100/80 mt-4 text-lg leading-relaxed max-w-md">
-              Every room, repair, material, warranty, and task — connected and searchable.
+              {dict.auth.heroBody}
             </p>
           </div>
           <p className="text-brand-200/60 text-sm">koti.tervakuja.fi</p>
@@ -37,12 +41,12 @@ export default async function LoginPage({
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-700 text-white mb-4 shadow-lg shadow-brand-900/20">
               <Home className="w-7 h-7" />
             </div>
-            <h1 className="font-display text-2xl font-semibold text-stone-900">Sign in to Koti</h1>
+            <h1 className="font-display text-2xl font-semibold text-stone-900">{dict.auth.title}</h1>
           </div>
 
           <div className="hidden lg:block mb-8">
-            <h1 className="font-display text-2xl font-semibold text-stone-900">Welcome back</h1>
-            <p className="text-stone-500 mt-2 text-sm">Sign in to access your home memory.</p>
+            <h1 className="font-display text-2xl font-semibold text-stone-900">{dict.auth.welcomeBack}</h1>
+            <p className="text-stone-500 mt-2 text-sm">{dict.auth.subtitle}</p>
           </div>
 
           <div className="bg-surface border border-stone-200/80 rounded-2xl p-6 shadow-sm">

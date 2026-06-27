@@ -2,12 +2,17 @@ import { History } from "lucide-react";
 import { getProperties, getAllHistory } from "@/lib/queries";
 import { PageContainer, PageHeader, Card, EmptyState, PropertyTabs } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
+import { getDictionary} from "@/lib/i18n";
+import { getLocale } from "@/lib/i18n/server";
 
 export default async function HistoryPage({
   searchParams,
 }: {
   searchParams: Promise<{ property?: string }>;
 }) {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+
   const { property: propertyId } = await searchParams;
   const properties = await getProperties();
   const activePropertyId = propertyId ?? properties[0]?.id;
@@ -15,14 +20,14 @@ export default async function HistoryPage({
 
   return (
     <PageContainer size="narrow">
-      <PageHeader title="Maintenance history" subtitle="Everything done to your home" />
+      <PageHeader title={dict.history.title} subtitle={dict.history.subtitle} />
 
       <PropertyTabs properties={properties} activeId={activePropertyId} basePath="/history" />
 
       {events.length === 0 ? (
         <EmptyState
           icon={<History className="w-6 h-6" />}
-          message="No maintenance history yet. Complete a task to start building your timeline."
+          message={dict.history.empty}
         />
       ) : (
         <div className="relative pl-2">
@@ -39,8 +44,8 @@ export default async function HistoryPage({
                     <p className="text-sm text-stone-500 mt-1 leading-relaxed">{event.description}</p>
                   )}
                   <div className="flex gap-3 mt-2 text-xs text-stone-400 flex-wrap">
-                    <span>{formatDate(event.completedAt)}</span>
-                    {event.cost && <span>{formatCurrency(event.cost)}</span>}
+                    <span>{formatDate(event.completedAt, locale)}</span>
+                    {event.cost && <span>{formatCurrency(event.cost, locale)}</span>}
                     {event.contractor && <span>{event.contractor}</span>}
                   </div>
                   {event.notes && (

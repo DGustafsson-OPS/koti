@@ -8,9 +8,18 @@ import {
   Badge,
   Callout,
 } from "@/components/ui";
-import { formatDate, formatCurrency, daysUntil, CATEGORY_LABELS } from "@/lib/utils";
+import { formatDate, formatCurrency, daysUntil } from "@/lib/utils";
+import {
+  getDictionary,
+  categoryLabel,
+  interpolate,
+} from "@/lib/i18n";
+import { getLocale } from "@/lib/i18n/server";
 
 export default async function AssetPage({ params }: { params: Promise<{ id: string }> }) {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+
   const { id } = await params;
   const asset = await getAsset(id);
   if (!asset) notFound();
@@ -26,53 +35,58 @@ export default async function AssetPage({ params }: { params: Promise<{ id: stri
       <PageHeader
         title={asset.name}
         subtitle={[property?.name, room?.name].filter(Boolean).join(" · ")}
-        back={{ href: `/properties/${asset.propertyId}`, label: property?.name ?? "Property" }}
+        back={{
+          href: `/properties/${asset.propertyId}`,
+          label: property?.name ?? dict.common.property,
+        }}
       />
 
       <div className="grid md:grid-cols-2 gap-6 mb-8">
         <Card>
-          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-widest mb-4">Details</h3>
+          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-widest mb-4">
+            {dict.asset.details}
+          </h3>
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between gap-4">
-              <dt className="text-stone-500">Category</dt>
+              <dt className="text-stone-500">{dict.asset.category}</dt>
               <dd>
-                <Badge>{CATEGORY_LABELS[asset.category] ?? asset.category}</Badge>
+                <Badge>{categoryLabel(dict, asset.category)}</Badge>
               </dd>
             </div>
             {asset.brand && (
               <div className="flex justify-between gap-4">
-                <dt className="text-stone-500">Brand</dt>
+                <dt className="text-stone-500">{dict.asset.brand}</dt>
                 <dd className="text-stone-900">{asset.brand}</dd>
               </div>
             )}
             {asset.model && (
               <div className="flex justify-between gap-4">
-                <dt className="text-stone-500">Model</dt>
+                <dt className="text-stone-500">{dict.asset.model}</dt>
                 <dd className="text-stone-900">{asset.model}</dd>
               </div>
             )}
             {asset.serialNumber && (
               <div className="flex justify-between gap-4">
-                <dt className="text-stone-500">Serial</dt>
+                <dt className="text-stone-500">{dict.asset.serial}</dt>
                 <dd className="font-mono text-xs text-stone-900">{asset.serialNumber}</dd>
               </div>
             )}
             {asset.purchaseDate && (
               <div className="flex justify-between gap-4">
-                <dt className="text-stone-500">Purchased</dt>
-                <dd className="text-stone-900">{formatDate(asset.purchaseDate)}</dd>
+                <dt className="text-stone-500">{dict.asset.purchased}</dt>
+                <dd className="text-stone-900">{formatDate(asset.purchaseDate, locale)}</dd>
               </div>
             )}
             {asset.purchasePrice && (
               <div className="flex justify-between gap-4">
-                <dt className="text-stone-500">Purchase price</dt>
-                <dd className="text-stone-900">{formatCurrency(asset.purchasePrice)}</dd>
+                <dt className="text-stone-500">{dict.asset.purchasePrice}</dt>
+                <dd className="text-stone-900">{formatCurrency(asset.purchasePrice, locale)}</dd>
               </div>
             )}
             {asset.replacementValue && (
               <div className="flex justify-between gap-4">
-                <dt className="text-stone-500">Replacement value</dt>
-                <dd className="text-stone-900">{formatCurrency(asset.replacementValue)}</dd>
+                <dt className="text-stone-500">{dict.asset.replacementValue}</dt>
+                <dd className="text-stone-900">{formatCurrency(asset.replacementValue, locale)}</dd>
               </div>
             )}
           </dl>
@@ -80,18 +94,24 @@ export default async function AssetPage({ params }: { params: Promise<{ id: stri
 
         {room && (
           <Card href={`/rooms/${room.id}`}>
-            <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-widest mb-2">Location</h3>
+            <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-widest mb-2">
+              {dict.asset.location}
+            </h3>
             <p className="font-medium text-stone-900">{room.name}</p>
-            {room.floor && <p className="text-sm text-stone-500 mt-1">{room.floor} floor</p>}
+            {room.floor && (
+              <p className="text-sm text-stone-500 mt-1">
+                {interpolate(dict.common.floor, { floor: room.floor })}
+              </p>
+            )}
           </Card>
         )}
       </div>
 
       {asset.notes && <Callout>{asset.notes}</Callout>}
 
-      <Section title="Warranties">
+      <Section title={dict.asset.warranties}>
         {warranties.length === 0 ? (
-          <p className="text-sm text-stone-500">No warranties recorded.</p>
+          <p className="text-sm text-stone-500">{dict.asset.noWarranties}</p>
         ) : (
           <div className="space-y-3">
             {warranties.map((w) => {
@@ -101,12 +121,18 @@ export default async function AssetPage({ params }: { params: Promise<{ id: stri
                 <Card key={w.id} padding="sm">
                   <div className="flex justify-between items-start gap-3">
                     <div>
-                      <p className="font-medium text-stone-900">{w.provider ?? "Warranty"}</p>
-                      <p className="text-xs text-stone-500 mt-0.5">Expires {formatDate(w.expiresAt)}</p>
+                      <p className="font-medium text-stone-900">{w.provider ?? dict.asset.warranty}</p>
+                      <p className="text-xs text-stone-500 mt-0.5">
+                        {interpolate(dict.common.expires, {
+                          date: formatDate(w.expiresAt, locale),
+                        })}
+                      </p>
                       {w.terms && <p className="text-xs text-stone-500 mt-1">{w.terms}</p>}
                     </div>
                     <Badge variant={expired ? "red" : days <= 60 ? "yellow" : "green"}>
-                      {expired ? "Expired" : `${days} days`}
+                      {expired
+                        ? dict.common.expired
+                        : interpolate(dict.common.days, { n: days })}
                     </Badge>
                   </div>
                 </Card>

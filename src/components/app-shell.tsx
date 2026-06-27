@@ -9,20 +9,27 @@ import {
   CheckSquare,
   History,
   Search,
+  Settings,
   Menu,
   X,
   LogOut,
 } from "lucide-react";
 import { logoutAction } from "@/app/login/actions";
 import { cn } from "@/lib/utils";
+import type { Dictionary } from "@/lib/i18n/types";
 
-const links = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/properties", label: "Properties", icon: Home },
-  { href: "/tasks", label: "Tasks", icon: CheckSquare },
-  { href: "/history", label: "History", icon: History },
-  { href: "/search", label: "Search", icon: Search },
-];
+type NavLabels = Dictionary["nav"];
+
+function buildLinks(labels: NavLabels) {
+  return [
+    { href: "/", label: labels.dashboard, icon: LayoutDashboard },
+    { href: "/properties", label: labels.properties, icon: Home },
+    { href: "/tasks", label: labels.tasks, icon: CheckSquare },
+    { href: "/history", label: labels.history, icon: History },
+    { href: "/search", label: labels.search, icon: Search },
+    { href: "/settings", label: labels.settings, icon: Settings },
+  ];
+}
 
 function NavLink({
   href,
@@ -56,7 +63,15 @@ function NavLink({
   );
 }
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({
+  labels,
+  onNavigate,
+}: {
+  labels: NavLabels;
+  onNavigate?: () => void;
+}) {
+  const links = buildLinks(labels);
+
   return (
     <>
       <div className="px-4 py-6 border-b border-white/10">
@@ -66,7 +81,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
           <div>
             <p className="font-display text-lg font-semibold text-white tracking-tight">Koti</p>
-            <p className="text-[11px] text-brand-200/70 uppercase tracking-widest">Home memory</p>
+            <p className="text-[11px] text-brand-200/70 uppercase tracking-widest">{labels.tagline}</p>
           </div>
         </Link>
       </div>
@@ -84,7 +99,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-brand-100/80 hover:bg-white/10 hover:text-white transition-colors"
           >
             <LogOut className="w-[18px] h-[18px]" />
-            Sign out
+            {labels.signOut}
           </button>
         </form>
       </div>
@@ -92,7 +107,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  labels,
+}: {
+  children: React.ReactNode;
+  labels: NavLabels;
+}) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -103,7 +124,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex">
       <aside className="hidden lg:flex w-64 flex-col bg-brand-900 shrink-0 sticky top-0 h-screen">
-        <SidebarContent />
+        <SidebarContent labels={labels} />
       </aside>
 
       {mobileOpen && (
@@ -117,11 +138,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={() => setMobileOpen(false)}
               className="absolute top-4 right-4 p-2 text-brand-100 hover:text-white"
-              aria-label="Close menu"
+              aria-label={labels.closeMenu}
             >
               <X className="w-5 h-5" />
             </button>
-            <SidebarContent onNavigate={() => setMobileOpen(false)} />
+            <SidebarContent labels={labels} onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
@@ -132,7 +153,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={() => setMobileOpen(true)}
             className="p-2 -ml-2 text-stone-600 hover:text-stone-900 rounded-lg hover:bg-stone-100"
-            aria-label="Open menu"
+            aria-label={labels.openMenu}
           >
             <Menu className="w-5 h-5" />
           </button>

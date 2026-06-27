@@ -3,22 +3,24 @@
 import { useActionState } from "react";
 import { loginFormAction } from "./actions";
 import { Button, Input } from "@/components/ui";
+import { useI18n } from "@/components/locale-provider";
 
 export function LoginForm({ from }: { from: string }) {
+  const { dict } = useI18n();
   const [state, action, pending] = useActionState(loginFormAction, null);
 
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="from" value={from} />
       <Input
-        label="Username"
+        label={dict.auth.username}
         name="username"
         autoComplete="username"
         required
-        placeholder="admin"
+        placeholder={dict.auth.usernamePlaceholder}
       />
       <Input
-        label="Password"
+        label={dict.auth.password}
         name="password"
         type="password"
         autoComplete="current-password"
@@ -30,7 +32,7 @@ export function LoginForm({ from }: { from: string }) {
         </p>
       )}
       <Button type="submit" className="w-full justify-center" disabled={pending}>
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? dict.common.signingIn : dict.common.signIn}
       </Button>
     </form>
   );

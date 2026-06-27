@@ -12,6 +12,13 @@ import {
   Panel,
 } from "@/components/ui";
 import { formatDate, PRIORITY_COLORS } from "@/lib/utils";
+import {
+  getDictionary,
+  interpolate,
+  priorityLabel,
+  recurrenceLabel,
+} from "@/lib/i18n";
+import { getLocale } from "@/lib/i18n/server";
 import { CreateTaskForm } from "@/components/forms/create-task-form";
 import { db } from "@/db";
 import { assets, rooms } from "@/db/schema";
@@ -32,6 +39,9 @@ export default async function TasksPage({
 }: {
   searchParams: Promise<{ property?: string }>;
 }) {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+
   const { property: propertyId } = await searchParams;
   const properties = await getProperties();
   const activePropertyId = propertyId ?? properties[0]?.id;
@@ -51,12 +61,12 @@ export default async function TasksPage({
 
   return (
     <PageContainer size="narrow">
-      <PageHeader title="Tasks" subtitle="Maintenance reminders and to-dos" />
+      <PageHeader title={dict.tasks.title} subtitle={dict.tasks.subtitle} />
 
       <PropertyTabs properties={properties} activeId={activePropertyId} basePath="/tasks" />
 
       {activePropertyId && (
-        <Panel title="New task" className="mb-8">
+        <Panel title={dict.tasks.newTask} className="mb-8">
           <CreateTaskForm
             propertyId={activePropertyId}
             rooms={propertyRooms}
@@ -68,7 +78,7 @@ export default async function TasksPage({
       {tasks.length === 0 ? (
         <EmptyState
           icon={<CheckSquare className="w-6 h-6" />}
-          message="No pending tasks. Add one above or complete existing items from your property page."
+          message={dict.tasks.empty}
         />
       ) : (
         <div className="space-y-4">
@@ -83,26 +93,32 @@ export default async function TasksPage({
                   )}
                   <div className="flex gap-2 mt-3 flex-wrap">
                     {task.dueDate && (
-                      <span className="text-xs text-stone-500">Due {formatDate(task.dueDate)}</span>
+                      <span className="text-xs text-stone-500">
+                        {interpolate(dict.common.due, {
+                          date: formatDate(task.dueDate, locale),
+                        })}
+                      </span>
                     )}
-                    {task.recurrence !== "none" && <Badge variant="blue">{task.recurrence}</Badge>}
+                    {task.recurrence !== "none" && (
+                      <Badge variant="blue">{recurrenceLabel(dict, task.recurrence)}</Badge>
+                    )}
                     <span
                       className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${PRIORITY_COLORS[task.priority] ?? ""}`}
                     >
-                      {task.priority}
+                      {priorityLabel(dict, task.priority)}
                     </span>
-                    {isOverdue && <Badge variant="red">Overdue</Badge>}
+                    {isOverdue && <Badge variant="red">{dict.common.overdue}</Badge>}
                   </div>
                 </div>
                 <form action={handleComplete} className="border-t border-stone-100 pt-4">
                   <input type="hidden" name="taskId" value={task.id} />
                   <div className="grid sm:grid-cols-3 gap-3 mb-3">
-                    <Input name="cost" type="number" placeholder="Cost (€)" />
-                    <Input name="contractor" placeholder="Contractor" />
-                    <Input name="notes" placeholder="Notes" />
+                    <Input name="cost" type="number" placeholder={dict.tasks.costPlaceholder} />
+                    <Input name="contractor" placeholder={dict.tasks.contractorPlaceholder} />
+                    <Input name="notes" placeholder={dict.tasks.notesPlaceholder} />
                   </div>
                   <Button type="submit" variant="secondary" size="sm">
-                    Mark complete
+                    {dict.common.markComplete}
                   </Button>
                 </form>
               </Card>

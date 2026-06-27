@@ -3,14 +3,17 @@
 import { useState } from "react";
 import { createNote } from "@/lib/queries";
 import { Button, Textarea } from "@/components/ui";
+import { useI18n } from "@/components/locale-provider";
 
 export function CreateNoteForm({ roomId }: { roomId: string }) {
+  const { dict } = useI18n();
+  const f = dict.forms;
   const [open, setOpen] = useState(false);
 
   if (!open) {
     return (
       <Button variant="secondary" onClick={() => setOpen(true)} className="text-sm">
-        + Add note
+        {f.addNote}
       </Button>
     );
   }
@@ -26,11 +29,11 @@ export function CreateNoteForm({ roomId }: { roomId: string }) {
       }}
       className="p-5 border border-stone-200/80 rounded-2xl space-y-4 bg-canvas-subtle/50"
     >
-      <Textarea label="Note" name="content" required placeholder="Oak parquet — use Bona cleaner only..." />
+      <Textarea label={f.note} name="content" required placeholder={f.notePlaceholder} />
       <div className="flex gap-2">
-        <Button type="submit">Save note</Button>
+        <Button type="submit">{f.saveNote}</Button>
         <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-          Cancel
+          {dict.common.cancel}
         </Button>
       </div>
     </form>

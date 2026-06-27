@@ -3,14 +3,17 @@
 import { useState } from "react";
 import { createRoom } from "@/lib/queries";
 import { Button, Input } from "@/components/ui";
+import { useI18n } from "@/components/locale-provider";
 
 export function CreateRoomForm({ propertyId }: { propertyId: string }) {
+  const { dict } = useI18n();
+  const f = dict.forms;
   const [open, setOpen] = useState(false);
 
   if (!open) {
     return (
       <Button variant="secondary" onClick={() => setOpen(true)} className="text-sm">
-        + Add room
+        {f.addRoom}
       </Button>
     );
   }
@@ -28,13 +31,13 @@ export function CreateRoomForm({ propertyId }: { propertyId: string }) {
       }}
       className="mt-2 p-5 border border-stone-200/80 rounded-2xl space-y-4 bg-canvas-subtle/50"
     >
-      <Input label="Room name *" name="name" required placeholder="Living Room" />
-      <Input label="Floor" name="floor" placeholder="Ground, 1st, Basement" />
-      <Input label="Notes" name="notes" placeholder="Optional notes" />
+      <Input label={f.roomName} name="name" required placeholder={f.roomNamePlaceholder} />
+      <Input label={f.floor} name="floor" placeholder={f.floorPlaceholder} />
+      <Input label={f.notes} name="notes" placeholder={f.notesPlaceholder} />
       <div className="flex gap-2">
-        <Button type="submit">Add room</Button>
+        <Button type="submit">{f.submitRoom}</Button>
         <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-          Cancel
+          {dict.common.cancel}
         </Button>
       </div>
     </form>

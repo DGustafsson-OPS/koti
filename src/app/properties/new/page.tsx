@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createProperty } from "@/lib/queries";
 import { PageContainer, PageHeader, Input, Select, Textarea, Button, Panel } from "@/components/ui";
+import { getDictionary, propertyTypeLabel } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18n/server";
 
 async function handleCreate(formData: FormData) {
   "use server";
@@ -15,31 +17,59 @@ async function handleCreate(formData: FormData) {
   redirect(`/properties/${id}`);
 }
 
-export default function NewPropertyPage() {
+const PROPERTY_TYPE_KEYS = ["house", "apartment", "townhouse", "duplex", "other"] as const;
+
+export default async function NewPropertyPage() {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+
   return (
     <PageContainer size="narrow">
       <PageHeader
-        title="Add property"
-        subtitle="Create a new home record"
-        back={{ href: "/properties", label: "All properties" }}
+        title={dict.propertyNew.title}
+        subtitle={dict.propertyNew.subtitle}
+        back={{ href: "/properties", label: dict.common.allProperties }}
       />
       <Panel>
         <form action={handleCreate} className="space-y-4">
-          <Input label="Name *" name="name" required placeholder="Main Home" />
-          <Input label="Address" name="address" placeholder="12 Birch Lane, Helsinki" />
-          <Select label="Property type" name="propertyType" defaultValue="house">
-            <option value="house">House</option>
-            <option value="apartment">Apartment</option>
-            <option value="townhouse">Townhouse</option>
-            <option value="duplex">Duplex</option>
-            <option value="other">Other</option>
+          <Input
+            label={dict.propertyNew.name}
+            name="name"
+            required
+            placeholder={dict.propertyNew.namePlaceholder}
+          />
+          <Input
+            label={dict.propertyNew.address}
+            name="address"
+            placeholder={dict.propertyNew.addressPlaceholder}
+          />
+          <Select label={dict.propertyNew.type} name="propertyType" defaultValue="house">
+            {PROPERTY_TYPE_KEYS.map((key) => (
+              <option key={key} value={key}>
+                {propertyTypeLabel(dict, key)}
+              </option>
+            ))}
           </Select>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Year built" name="yearBuilt" type="number" placeholder="1985" />
-            <Input label="Size (m²)" name="sizeSqm" type="number" placeholder="145" />
+            <Input
+              label={dict.propertyNew.yearBuilt}
+              name="yearBuilt"
+              type="number"
+              placeholder={dict.propertyNew.yearPlaceholder}
+            />
+            <Input
+              label={dict.propertyNew.size}
+              name="sizeSqm"
+              type="number"
+              placeholder={dict.propertyNew.sizePlaceholder}
+            />
           </div>
-          <Textarea label="Notes" name="notes" placeholder="Shutoff locations, panel info..." />
-          <Button type="submit">Create property</Button>
+          <Textarea
+            label={dict.propertyNew.notes}
+            name="notes"
+            placeholder={dict.propertyNew.notesPlaceholder}
+          />
+          <Button type="submit">{dict.propertyNew.submit}</Button>
         </form>
       </Panel>
     </PageContainer>

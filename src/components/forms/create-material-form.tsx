@@ -4,6 +4,8 @@ import { useState } from "react";
 import { createMaterial } from "@/lib/queries";
 import { Button, Input, Select } from "@/components/ui";
 import type { Room } from "@/db/schema";
+import { useI18n } from "@/components/locale-provider";
+import { categoryLabel } from "@/lib/i18n";
 
 export function CreateMaterialForm({
   propertyId,
@@ -12,15 +14,19 @@ export function CreateMaterialForm({
   propertyId: string;
   rooms: Room[];
 }) {
+  const { dict } = useI18n();
+  const f = dict.forms;
   const [open, setOpen] = useState(false);
 
   if (!open) {
     return (
       <Button variant="secondary" onClick={() => setOpen(true)} className="text-sm">
-        + Add material
+        {f.addMaterial}
       </Button>
     );
   }
+
+  const categories = ["paint", "flooring", "tile", "filter", "hardware", "other"] as const;
 
   return (
     <form
@@ -41,38 +47,37 @@ export function CreateMaterialForm({
       }}
       className="mt-2 p-5 border border-stone-200/80 rounded-2xl space-y-4 bg-canvas-subtle/50"
     >
-      <Input label="Name *" name="name" required placeholder="Symphony F497" />
-      <Select label="Category" name="category" defaultValue="paint">
-        <option value="paint">Paint</option>
-        <option value="flooring">Flooring</option>
-        <option value="tile">Tile</option>
-        <option value="filter">Filter</option>
-        <option value="hardware">Hardware</option>
-        <option value="other">Other</option>
+      <Input label={f.name} name="name" required placeholder={f.materialNamePlaceholder} />
+      <Select label={f.category} name="category" defaultValue="paint">
+        {categories.map((c) => (
+          <option key={c} value={c}>
+            {categoryLabel(dict, c)}
+          </option>
+        ))}
       </Select>
       <div className="grid grid-cols-2 gap-3">
-        <Input label="Brand" name="brand" placeholder="Tikkurila" />
-        <Input label="Color code" name="colorCode" placeholder="F497" />
+        <Input label={f.brand} name="brand" placeholder={f.brandPlaceholder} />
+        <Input label={f.colorCode} name="colorCode" placeholder={f.colorPlaceholder} />
       </div>
-      <Input label="Finish" name="finish" placeholder="matte, satin, gloss" />
-      <Input label="Leftover location" name="leftoverLocation" placeholder="Garage shelf B" />
+      <Input label={f.finish} name="finish" placeholder={f.finishPlaceholder} />
+      <Input label={f.leftoverLocation} name="leftoverLocation" placeholder={f.leftoverPlaceholder} />
       {rooms.length > 0 && (
         <>
-          <Select label="Link to room" name="roomId" defaultValue="">
-            <option value="">— None —</option>
+          <Select label={f.linkToRoom} name="roomId" defaultValue="">
+            <option value="">{dict.common.none}</option>
             {rooms.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name}
               </option>
             ))}
           </Select>
-          <Input label="Surface" name="surface" placeholder="walls, ceiling, trim, floor" />
+          <Input label={f.surface} name="surface" placeholder={f.surfacePlaceholder} />
         </>
       )}
       <div className="flex gap-2">
-        <Button type="submit">Add material</Button>
+        <Button type="submit">{f.submitMaterial}</Button>
         <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-          Cancel
+          {dict.common.cancel}
         </Button>
       </div>
     </form>

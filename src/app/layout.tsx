@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { DM_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
+import { LocaleProvider } from "@/components/locale-provider";
+import { getDictionary} from "@/lib/i18n";
+import { getLocale } from "@/lib/i18n/server";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -20,11 +23,16 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+
   return (
-    <html lang="en" className={`${dmSans.variable} ${fraunces.variable}`}>
+    <html lang={locale} className={`${dmSans.variable} ${fraunces.variable}`}>
       <body className="font-sans">
-        <AppShell>{children}</AppShell>
+        <LocaleProvider locale={locale} dict={dict}>
+          <AppShell labels={dict.nav}>{children}</AppShell>
+        </LocaleProvider>
       </body>
     </html>
   );

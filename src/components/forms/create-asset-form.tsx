@@ -4,6 +4,8 @@ import { useState } from "react";
 import { createAsset } from "@/lib/queries";
 import { Button, Input, Select } from "@/components/ui";
 import type { Room } from "@/db/schema";
+import { useI18n } from "@/components/locale-provider";
+import { categoryLabel } from "@/lib/i18n";
 
 export function CreateAssetForm({
   propertyId,
@@ -12,15 +14,19 @@ export function CreateAssetForm({
   propertyId: string;
   rooms: Room[];
 }) {
+  const { dict } = useI18n();
+  const f = dict.forms;
   const [open, setOpen] = useState(false);
 
   if (!open) {
     return (
       <Button variant="secondary" onClick={() => setOpen(true)} className="text-sm">
-        + Add asset
+        {f.addAsset}
       </Button>
     );
   }
+
+  const categories = ["appliance", "fixture", "furniture", "system", "other"] as const;
 
   return (
     <form
@@ -47,17 +53,17 @@ export function CreateAssetForm({
       }}
       className="mt-2 p-5 border border-stone-200/80 rounded-2xl space-y-4 bg-canvas-subtle/50"
     >
-      <Input label="Name *" name="name" required placeholder="Bosch Dishwasher" />
-      <Select label="Category" name="category" defaultValue="appliance">
-        <option value="appliance">Appliance</option>
-        <option value="fixture">Fixture</option>
-        <option value="furniture">Furniture</option>
-        <option value="system">System</option>
-        <option value="other">Other</option>
+      <Input label={f.name} name="name" required placeholder={f.assetNamePlaceholder} />
+      <Select label={f.category} name="category" defaultValue="appliance">
+        {categories.map((c) => (
+          <option key={c} value={c}>
+            {categoryLabel(dict, c)}
+          </option>
+        ))}
       </Select>
       {rooms.length > 0 && (
-        <Select label="Room" name="roomId" defaultValue="">
-          <option value="">— None —</option>
+        <Select label={f.room} name="roomId" defaultValue="">
+          <option value="">{dict.common.none}</option>
           {rooms.map((r) => (
             <option key={r.id} value={r.id}>
               {r.name}
@@ -66,22 +72,22 @@ export function CreateAssetForm({
         </Select>
       )}
       <div className="grid grid-cols-2 gap-3">
-        <Input label="Brand" name="brand" />
-        <Input label="Model" name="model" />
+        <Input label={f.brand} name="brand" />
+        <Input label={f.model} name="model" />
       </div>
-      <Input label="Serial number" name="serialNumber" />
+      <Input label={f.serialNumber} name="serialNumber" />
       <div className="grid grid-cols-2 gap-3">
-        <Input label="Purchase price (€)" name="purchasePrice" type="number" />
-        <Input label="Replacement value (€)" name="replacementValue" type="number" />
+        <Input label={f.purchasePrice} name="purchasePrice" type="number" />
+        <Input label={f.replacementValue} name="replacementValue" type="number" />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Input label="Warranty expires" name="warrantyExpiresAt" type="date" />
-        <Input label="Warranty provider" name="warrantyProvider" />
+        <Input label={f.warrantyExpires} name="warrantyExpiresAt" type="date" />
+        <Input label={f.warrantyProvider} name="warrantyProvider" />
       </div>
       <div className="flex gap-2">
-        <Button type="submit">Add asset</Button>
+        <Button type="submit">{f.submitAsset}</Button>
         <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-          Cancel
+          {dict.common.cancel}
         </Button>
       </div>
     </form>

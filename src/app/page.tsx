@@ -24,9 +24,18 @@ import {
   StatCard,
   ButtonLink,
 } from "@/components/ui";
+import {
+  getDictionary,
+  interpolate,
+  priorityLabel,
+} from "@/lib/i18n";
+import { getLocale } from "@/lib/i18n/server";
 import { formatDate, formatCurrency, daysUntil, PRIORITY_COLORS } from "@/lib/utils";
 
 export default async function DashboardPage() {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+
   const properties = await getProperties();
   const property = properties[0];
 
@@ -46,8 +55,8 @@ export default async function DashboardPage() {
       <PageContainer size="narrow">
         <EmptyState
           icon={<Home className="w-7 h-7" />}
-          message="Start by adding your home — then track rooms, materials, tasks, and maintenance history in one place."
-          action={<ButtonLink href="/properties/new">Add your first property</ButtonLink>}
+          message={dict.dashboard.welcomeBody}
+          action={<ButtonLink href="/properties/new">{dict.dashboard.addFirstProperty}</ButtonLink>}
         />
       </PageContainer>
     );
@@ -59,7 +68,9 @@ export default async function DashboardPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_50%)]" />
         <div className="absolute -right-8 -bottom-8 w-48 h-48 rounded-full bg-brand-700/30 blur-2xl" />
         <div className="relative">
-          <p className="text-brand-200 text-xs font-semibold uppercase tracking-widest">Your home</p>
+          <p className="text-brand-200 text-xs font-semibold uppercase tracking-widest">
+            {dict.dashboard.yourHome}
+          </p>
           <h1 className="font-display text-3xl sm:text-5xl font-semibold mt-2 tracking-tight">
             {property.name}
           </h1>
@@ -71,19 +82,19 @@ export default async function DashboardPage() {
               href={`/properties/${property.id}`}
               className="text-sm px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 transition-colors ring-1 ring-white/20"
             >
-              View property
+              {dict.dashboard.viewProperty}
             </Link>
             <Link
               href="/tasks"
               className="text-sm px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 transition-colors ring-1 ring-white/20"
             >
-              All tasks
+              {dict.dashboard.allTasks}
             </Link>
             <Link
               href="/search"
               className="text-sm px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 transition-colors ring-1 ring-white/20"
             >
-              Search
+              {dict.nav.search}
             </Link>
           </div>
         </div>
@@ -91,26 +102,26 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         <StatCard
-          label="Overdue tasks"
+          label={dict.dashboard.overdueTasks}
           value={overdue.length}
           variant={overdue.length > 0 ? "danger" : "default"}
           icon={<AlertTriangle className="w-4 h-4" />}
         />
         <StatCard
-          label="Due this month"
+          label={dict.dashboard.dueThisMonth}
           value={upcoming.length}
           icon={<Calendar className="w-4 h-4" />}
         />
         <StatCard
-          label="Warranties expiring"
+          label={dict.dashboard.warrantiesExpiring}
           value={expiring.length}
           variant={expiring.length > 0 ? "warning" : "default"}
-          sub="Within 60 days"
+          sub={dict.dashboard.within60Days}
           icon={<Shield className="w-4 h-4" />}
         />
         <StatCard
-          label="Inventory value"
-          value={formatCurrency(inventoryValue)}
+          label={dict.dashboard.inventoryValue}
+          value={formatCurrency(inventoryValue, locale)}
           icon={<Wallet className="w-4 h-4" />}
         />
       </div>
@@ -118,17 +129,17 @@ export default async function DashboardPage() {
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <Section
-            title="Tasks"
+            title={dict.dashboard.tasks}
             action={
               <Link href="/tasks" className="text-xs text-brand-700 hover:underline font-medium">
-                View all →
+                {dict.common.viewAll}
               </Link>
             }
           >
             {tasks.length === 0 ? (
               <EmptyState
                 icon={<CheckSquare className="w-6 h-6" />}
-                message="No pending tasks — you're all caught up."
+                message={dict.dashboard.noTasks}
               />
             ) : (
               <div className="space-y-3">
@@ -142,14 +153,16 @@ export default async function DashboardPage() {
                     >
                       <div className="min-w-0">
                         <p className="font-medium text-stone-900">{task.title}</p>
-                        <p className="text-sm text-stone-500 mt-0.5">{formatDate(task.dueDate)}</p>
+                        <p className="text-sm text-stone-500 mt-0.5">
+                          {formatDate(task.dueDate, locale)}
+                        </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 shrink-0">
-                        {isOverdue && <Badge variant="red">Overdue</Badge>}
+                        {isOverdue && <Badge variant="red">{dict.common.overdue}</Badge>}
                         <span
                           className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${PRIORITY_COLORS[task.priority] ?? "bg-stone-100 text-stone-600"}`}
                         >
-                          {task.priority}
+                          {priorityLabel(dict, task.priority)}
                         </span>
                       </div>
                     </Card>
@@ -160,23 +173,23 @@ export default async function DashboardPage() {
           </Section>
 
           <Section
-            title="Recent history"
+            title={dict.dashboard.recentHistory}
             action={
               <Link href="/history" className="text-xs text-brand-700 hover:underline font-medium">
-                View all →
+                {dict.common.viewAll}
               </Link>
             }
           >
             {history.length === 0 ? (
-              <EmptyState message="No maintenance history yet." />
+              <EmptyState message={dict.dashboard.noHistory} />
             ) : (
               <div className="space-y-3">
                 {history.map((event) => (
                   <Card key={event.id} padding="sm">
                     <p className="font-medium text-stone-900">{event.title}</p>
                     <p className="text-sm text-stone-500 mt-1">
-                      {formatDate(event.completedAt)}
-                      {event.cost != null ? ` · ${formatCurrency(event.cost)}` : ""}
+                      {formatDate(event.completedAt, locale)}
+                      {event.cost != null ? ` · ${formatCurrency(event.cost, locale)}` : ""}
                       {event.contractor ? ` · ${event.contractor}` : ""}
                     </p>
                   </Card>
@@ -187,16 +200,17 @@ export default async function DashboardPage() {
         </div>
 
         <div className="space-y-8">
-          <Section title="Expiring warranties">
+          <Section title={dict.dashboard.expiringWarranties}>
             {expiring.length === 0 ? (
-              <EmptyState message="No warranties expiring in the next 60 days." />
+              <EmptyState message={dict.dashboard.noWarranties} />
             ) : (
               <div className="space-y-3">
                 {expiring.map(({ warranty, asset }) => (
                   <Card key={warranty.id} href={`/assets/${asset.id}`} padding="sm">
                     <p className="font-medium text-stone-900">{asset.name}</p>
                     <p className="text-sm text-stone-500 mt-1">
-                      {formatDate(warranty.expiresAt)} · {daysUntil(warranty.expiresAt)} days left
+                      {formatDate(warranty.expiresAt, locale)} ·{" "}
+                      {interpolate(dict.common.daysLeft, { n: daysUntil(warranty.expiresAt) })}
                     </p>
                   </Card>
                 ))}
@@ -205,10 +219,10 @@ export default async function DashboardPage() {
           </Section>
 
           <Section
-            title="Properties"
+            title={dict.dashboard.properties}
             action={
               <Link href="/properties" className="text-xs text-brand-700 hover:underline font-medium">
-                Manage →
+                {dict.common.manage}
               </Link>
             }
           >

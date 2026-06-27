@@ -1,23 +1,36 @@
+import type { Locale } from "@/lib/i18n/types";
+import { currencyLocale, dateLocale, getDictionary, interpolate } from "@/lib/i18n/dictionaries";
+
 export function now(): number {
   return Math.floor(Date.now() / 1000);
 }
 
-export function formatDate(timestamp: number | null | undefined): string {
-  if (!timestamp) return "—";
-  return new Date(timestamp * 1000).toLocaleDateString("en-GB", {
+export function formatDate(
+  timestamp: number | null | undefined,
+  locale: Locale = "en"
+): string {
+  if (!timestamp) return getDictionary(locale).common.dash;
+  return new Date(timestamp * 1000).toLocaleDateString(dateLocale(locale), {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
 }
 
-export function formatCurrency(amount: number | null | undefined): string {
-  if (amount == null) return "—";
-  return new Intl.NumberFormat("en-GB", {
+export function formatCurrency(
+  amount: number | null | undefined,
+  locale: Locale = "en"
+): string {
+  if (amount == null) return getDictionary(locale).common.dash;
+  return new Intl.NumberFormat(currencyLocale(locale), {
     style: "currency",
     currency: "EUR",
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+export function formatDaysLeft(days: number, locale: Locale = "en"): string {
+  return interpolate(getDictionary(locale).common.daysLeft, { n: days });
 }
 
 export function daysUntil(timestamp: number): number {
