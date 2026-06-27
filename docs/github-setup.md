@@ -324,7 +324,9 @@ Copy this list and tick items off:
 | Repo | `git@github.com:DGustafsson-OPS/Ikiruska.git` | `git@github.com:DGustafsson-OPS/koti.git` |
 | GitHub account | `DGustafsson-OPS` | `DGustafsson-OPS` |
 | CI | `.github/workflows/ci.yml` | `.github/workflows/ci.yml` |
-| Stack | Python API + Vite frontend | Next.js 15 + Drizzle + SQLite |
+| Stack | Python API + Vite frontend | Next.js 15 + Drizzle + MySQL |
+| Production | UpCloud VPS + GHCR | koti.tervakuja.fi (CloudPanel + systemd) |
+| Deploy | `./deploy/deploy.sh` via GitHub Actions | `./deploy/deploy.sh` via SSH |
 
 ---
 
