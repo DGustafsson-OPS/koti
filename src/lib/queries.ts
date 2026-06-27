@@ -1263,4 +1263,5 @@ function revalidateAttachmentPaths(entityType: string, entityId: string) {
   if (entityType === "room") revalidatePath(`/rooms/${entityId}`);
   if (entityType === "asset") revalidatePath(`/assets/${entityId}`);
   if (entityType === "event") revalidatePath(`/events/${entityId}/edit`);
+  if (entityType === "property") revalidatePath(`/properties/${entityId}`);
 }

@@ -8,6 +8,7 @@ import {
   getMaterials,
   getTasks,
   getInventoryValue,
+  getAttachments,
 } from "@/lib/queries";
 import {
   PageContainer,
@@ -33,6 +34,7 @@ import { CreateBuildingForm } from "@/components/forms/create-building-form";
 import { CreateAssetForm } from "@/components/forms/create-asset-form";
 import { CreateMaterialForm } from "@/components/forms/create-material-form";
 import { CreateTaskForm } from "@/components/forms/create-task-form";
+import { AttachmentsSection } from "@/components/attachments-section";
 
 export default async function PropertyPage({ params }: { params: Promise<{ id: string }> }) {
   const locale = await getLocale();
@@ -42,13 +44,15 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
   const property = await getProperty(id);
   if (!property) notFound();
 
-  const [buildings, rooms, assets, materials, pendingTasks, inventoryValue] = await Promise.all([
+  const [buildings, rooms, assets, materials, pendingTasks, inventoryValue, attachmentList] =
+    await Promise.all([
     getBuildings(id),
     getRooms(id),
     getAssets(id),
     getMaterials(id),
     getTasks(id),
     getInventoryValue(id),
+    getAttachments("property", id),
   ]);
 
   return (
@@ -194,13 +198,23 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
           {pendingTasks.length > 0 && (
             <div className="space-y-3 mb-4">
               {pendingTasks.slice(0, 5).map((t) => (
-                <Card key={t.id} padding="sm">
+                <Card key={t.id} href={`/tasks/${t.id}/edit`} padding="sm">
                   <p className="font-medium text-sm text-stone-900">{t.title}</p>
                 </Card>
               ))}
             </div>
           )}
           <CreateTaskForm propertyId={id} rooms={rooms} assets={assets} />
+        </Section>
+
+        <Section title={dict.attachments.title} className="lg:col-span-2">
+          <AttachmentsSection
+            propertyId={id}
+            entityType="property"
+            entityId={id}
+            attachments={attachmentList}
+            locale={locale}
+          />
         </Section>
       </div>
     </PageContainer>
