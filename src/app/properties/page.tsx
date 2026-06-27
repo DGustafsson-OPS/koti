@@ -15,7 +15,7 @@ export default async function PropertiesPage() {
   const properties = await getProperties();
 
   return (
-    <PageContainer>
+    <PageContainer size="wide">
       <PageHeader
         title={dict.properties.title}
         subtitle={dict.properties.subtitle}

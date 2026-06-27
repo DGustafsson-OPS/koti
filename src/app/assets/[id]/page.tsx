@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getAsset, getProperty, getRoom, getAssetWarranties } from "@/lib/queries";
+import { getAsset, getProperty, getRoom, getAssetWarranties, getAttachments } from "@/lib/queries";
 import {
   PageContainer,
   PageHeader,
@@ -7,7 +7,10 @@ import {
   Section,
   Badge,
   Callout,
+  ButtonLink,
 } from "@/components/ui";
+import { CreateWarrantyForm } from "@/components/forms/create-warranty-form";
+import { AttachmentsSection } from "@/components/attachments-section";
 import { formatDate, formatCurrency, daysUntil } from "@/lib/utils";
 import {
   getDictionary,
@@ -24,14 +27,15 @@ export default async function AssetPage({ params }: { params: Promise<{ id: stri
   const asset = await getAsset(id);
   if (!asset) notFound();
 
-  const [property, room, warranties] = await Promise.all([
+  const [property, room, warranties, attachmentList] = await Promise.all([
     getProperty(asset.propertyId),
     asset.roomId ? getRoom(asset.roomId) : null,
     getAssetWarranties(id),
+    getAttachments("asset", id),
   ]);
 
   return (
-    <PageContainer size="narrow">
+    <PageContainer size="wide">
       <PageHeader
         title={asset.name}
         subtitle={[property?.name, room?.name].filter(Boolean).join(" · ")}
@@ -39,6 +43,11 @@ export default async function AssetPage({ params }: { params: Promise<{ id: stri
           href: `/properties/${asset.propertyId}`,
           label: property?.name ?? dict.common.property,
         }}
+        action={
+          <ButtonLink href={`/assets/${id}/edit`} variant="secondary">
+            {dict.common.edit}
+          </ButtonLink>
+        }
       />
 
       <div className="grid md:grid-cols-2 gap-6 mb-8">
@@ -118,7 +127,7 @@ export default async function AssetPage({ params }: { params: Promise<{ id: stri
               const days = daysUntil(w.expiresAt);
               const expired = days < 0;
               return (
-                <Card key={w.id} padding="sm">
+                <Card key={w.id} href={`/warranties/${w.id}/edit`} padding="sm">
                   <div className="flex justify-between items-start gap-3">
                     <div>
                       <p className="font-medium text-stone-900">{w.provider ?? dict.asset.warranty}</p>
@@ -140,6 +149,17 @@ export default async function AssetPage({ params }: { params: Promise<{ id: stri
             })}
           </div>
         )}
+        <CreateWarrantyForm assetId={id} />
+      </Section>
+
+      <Section title={dict.attachments.title} className="mt-8">
+        <AttachmentsSection
+          propertyId={asset.propertyId}
+          entityType="asset"
+          entityId={id}
+          attachments={attachmentList}
+          locale={locale}
+        />
       </Section>
     </PageContainer>
   );

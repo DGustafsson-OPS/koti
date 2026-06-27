@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { queryUrl } from "@/lib/query-url";
 
 export function PageContainer({
   children,
@@ -11,13 +12,13 @@ export function PageContainer({
   size?: "default" | "narrow" | "wide";
 }) {
   const widths = {
-    narrow: "max-w-3xl",
+    narrow: "max-w-2xl",
     default: "max-w-6xl",
-    wide: "max-w-7xl",
+    wide: "max-w-none",
   };
 
   return (
-    <div className={cn("mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 lg:py-10", widths[size], className)}>
+    <div className={cn("mx-auto w-full px-4 sm:px-6 xl:px-10 py-8 lg:py-10", widths[size], className)}>
       {children}
     </div>
   );
@@ -250,32 +251,41 @@ export function StatCard({
   sub,
   variant,
   icon,
+  href,
 }: {
   label: string;
   value: string | number;
   sub?: string;
   variant?: "default" | "warning" | "danger";
   icon?: React.ReactNode;
+  href?: string;
 }) {
   const styles = {
     default: "bg-surface border-stone-200/80",
     warning: "bg-amber-50/80 border-amber-200/80",
     danger: "bg-red-50/80 border-red-200/80",
   };
-  return (
-    <div
-      className={cn(
-        "border rounded-2xl p-5 shadow-sm shadow-stone-200/30",
-        styles[variant ?? "default"]
-      )}
-    >
+  const inner = (
+    <>
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">{label}</p>
-        {icon && <div className="text-stone-400">{icon}</div>}
+        {icon && <span className="text-stone-400 mt-0.5">{icon}</span>}
       </div>
-      <p className="font-display text-3xl font-semibold mt-2 text-stone-900 tracking-tight">{value}</p>
-      {sub && <p className="text-xs text-stone-400 mt-1.5">{sub}</p>}
-    </div>
+      <p className="text-2xl sm:text-3xl font-display font-semibold text-stone-900 mt-3">{value}</p>
+      <p className="text-xs font-medium text-stone-500 mt-1 uppercase tracking-wide">{label}</p>
+      {sub && <p className="text-xs text-stone-400 mt-0.5">{sub}</p>}
+    </>
+  );
+  const className = cn(
+    "border rounded-2xl p-5 shadow-sm shadow-stone-200/30 block",
+    styles[variant ?? "default"],
+    href && "hover:border-brand-300 transition-colors"
+  );
+  return href ? (
+    <Link href={href} className={className}>
+      {inner}
+    </Link>
+  ) : (
+    <div className={className}>{inner}</div>
   );
 }
 
@@ -283,10 +293,12 @@ export function PropertyTabs({
   properties,
   activeId,
   basePath,
+  params = {},
 }: {
   properties: { id: string; name: string }[];
   activeId?: string;
   basePath: string;
+  params?: Record<string, string | undefined>;
 }) {
   if (properties.length <= 1) return null;
 
@@ -295,7 +307,7 @@ export function PropertyTabs({
       {properties.map((p) => (
         <Link
           key={p.id}
-          href={`${basePath}?property=${p.id}`}
+          href={queryUrl(basePath, { ...params, property: p.id })}
           className={cn(
             "px-4 py-2 rounded-xl text-sm font-medium transition-all",
             p.id === activeId
@@ -304,6 +316,39 @@ export function PropertyTabs({
           )}
         >
           {p.name}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+export function FilterTabs({
+  items,
+  activeKey,
+  basePath,
+  paramName,
+  params = {},
+}: {
+  items: { key: string; label: string }[];
+  activeKey: string;
+  basePath: string;
+  paramName: string;
+  params?: Record<string, string | undefined>;
+}) {
+  return (
+    <div className="flex gap-2 mb-6 flex-wrap">
+      {items.map((item) => (
+        <Link
+          key={item.key}
+          href={queryUrl(basePath, { ...params, [paramName]: item.key === "all" ? undefined : item.key })}
+          className={cn(
+            "px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
+            item.key === activeKey
+              ? "bg-brand-100 text-brand-900 ring-1 ring-brand-200"
+              : "text-stone-600 hover:bg-stone-100"
+          )}
+        >
+          {item.label}
         </Link>
       ))}
     </div>

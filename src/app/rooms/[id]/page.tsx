@@ -1,12 +1,15 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   getRoom,
   getProperty,
+  getBuilding,
   getRoomMaterials,
   getRoomNotes,
   getRoomAssets,
   getRoomTasks,
   getRoomHistory,
+  getAttachments,
 } from "@/lib/queries";
 import {
   PageContainer,
@@ -15,6 +18,7 @@ import {
   Section,
   Badge,
   Callout,
+  ButtonLink,
 } from "@/components/ui";
 import { formatDate, formatCurrency, PRIORITY_COLORS } from "@/lib/utils";
 import {
@@ -25,6 +29,7 @@ import {
 } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { CreateNoteForm } from "@/components/forms/create-note-form";
+import { AttachmentsSection } from "@/components/attachments-section";
 
 export default async function RoomPage({ params }: { params: Promise<{ id: string }> }) {
   const locale = await getLocale();
@@ -35,23 +40,26 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
   if (!room) notFound();
 
   const property = await getProperty(room.propertyId);
-  const [materials, roomNotes, assets, pendingTasks, history] = await Promise.all([
+  const building = room.buildingId ? await getBuilding(room.buildingId) : null;
+  const [materials, roomNotes, assets, pendingTasks, history, attachmentList] = await Promise.all([
     getRoomMaterials(id),
     getRoomNotes(id),
     getRoomAssets(id),
     getRoomTasks(id),
     getRoomHistory(id),
+    getAttachments("room", id),
   ]);
 
   const subtitle = [
     property?.name,
+    building?.name,
     room.floor ? interpolate(dict.common.floor, { floor: room.floor }) : null,
   ]
     .filter(Boolean)
     .join(" · ");
 
   return (
-    <PageContainer>
+    <PageContainer size="wide">
       <PageHeader
         title={room.name}
         subtitle={subtitle}
@@ -59,6 +67,11 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
           href: `/properties/${room.propertyId}`,
           label: property?.name ?? dict.common.property,
         }}
+        action={
+          <ButtonLink href={`/rooms/${id}/edit`} variant="secondary">
+            {dict.common.edit}
+          </ButtonLink>
+        }
       />
 
       {room.notes && <Callout>{room.notes}</Callout>}
@@ -153,13 +166,33 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
           )}
         </Section>
 
+        <Section title={dict.attachments.title} className="md:col-span-2">
+          <AttachmentsSection
+            propertyId={room.propertyId}
+            entityType="room"
+            entityId={id}
+            attachments={attachmentList}
+            locale={locale}
+          />
+        </Section>
+
         <Section title={dict.room.notes} className="md:col-span-2">
           {roomNotes.length > 0 && (
             <div className="space-y-3 mb-4">
               {roomNotes.map((n) => (
                 <Card key={n.id} padding="sm">
-                  <p className="text-sm leading-relaxed text-stone-700">{n.content}</p>
-                  <p className="text-xs text-stone-400 mt-2">{formatDate(n.createdAt, locale)}</p>
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm leading-relaxed text-stone-700">{n.content}</p>
+                      <p className="text-xs text-stone-400 mt-2">{formatDate(n.createdAt, locale)}</p>
+                    </div>
+                    <Link
+                      href={`/notes/${n.id}/edit`}
+                      className="text-xs text-brand-700 hover:underline font-medium shrink-0"
+                    >
+                      {dict.common.edit}
+                    </Link>
+                  </div>
                 </Card>
               ))}
             </div>

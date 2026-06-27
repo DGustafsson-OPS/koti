@@ -39,6 +39,11 @@ export function propertyTypeLabel(dict: Dictionary, key: string): string {
   return labels[key] ?? key;
 }
 
+export function buildingTypeLabel(dict: Dictionary, key: string): string {
+  const labels = dict.buildingTypes as Record<string, string>;
+  return labels[key] ?? key;
+}
+
 export function dateLocale(locale: Locale): string {
   return locale === "fi" ? "fi-FI" : "en-GB";
 }

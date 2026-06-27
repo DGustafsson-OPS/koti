@@ -3,6 +3,7 @@ import { DM_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 import { LocaleProvider } from "@/components/locale-provider";
+import { AuthProvider } from "@/components/auth-provider";
 import { getDictionary} from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 
@@ -30,9 +31,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={locale} className={`${dmSans.variable} ${fraunces.variable}`}>
       <body className="font-sans">
-        <LocaleProvider locale={locale} dict={dict}>
-          <AppShell labels={dict.nav}>{children}</AppShell>
-        </LocaleProvider>
+        <AuthProvider>
+          <LocaleProvider locale={locale} dict={dict}>
+            <AppShell labels={dict.nav}>{children}</AppShell>
+          </LocaleProvider>
+        </AuthProvider>
       </body>
     </html>
   );

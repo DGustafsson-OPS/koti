@@ -31,6 +31,7 @@ import {
 } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { formatDate, formatCurrency, daysUntil, PRIORITY_COLORS } from "@/lib/utils";
+import { queryUrl } from "@/lib/query-url";
 
 export default async function DashboardPage() {
   const locale = await getLocale();
@@ -52,7 +53,7 @@ export default async function DashboardPage() {
 
   if (!property) {
     return (
-      <PageContainer size="narrow">
+      <PageContainer size="wide">
         <EmptyState
           icon={<Home className="w-7 h-7" />}
           message={dict.dashboard.welcomeBody}
@@ -63,7 +64,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <PageContainer>
+    <PageContainer size="wide">
       <section className="relative overflow-hidden rounded-3xl bg-brand-900 text-white px-6 sm:px-8 py-8 sm:py-10 mb-8 shadow-xl shadow-brand-900/20">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_50%)]" />
         <div className="absolute -right-8 -bottom-8 w-48 h-48 rounded-full bg-brand-700/30 blur-2xl" />
@@ -106,11 +107,13 @@ export default async function DashboardPage() {
           value={overdue.length}
           variant={overdue.length > 0 ? "danger" : "default"}
           icon={<AlertTriangle className="w-4 h-4" />}
+          href={queryUrl("/tasks", { property: property.id, filter: "overdue" })}
         />
         <StatCard
           label={dict.dashboard.dueThisMonth}
           value={upcoming.length}
           icon={<Calendar className="w-4 h-4" />}
+          href={queryUrl("/tasks", { property: property.id, filter: "month" })}
         />
         <StatCard
           label={dict.dashboard.warrantiesExpiring}
@@ -118,6 +121,7 @@ export default async function DashboardPage() {
           variant={expiring.length > 0 ? "warning" : "default"}
           sub={dict.dashboard.within60Days}
           icon={<Shield className="w-4 h-4" />}
+          href={expiring[0] ? `/assets/${expiring[0].asset.id}` : `/properties/${property.id}`}
         />
         <StatCard
           label={dict.dashboard.inventoryValue}
@@ -131,7 +135,10 @@ export default async function DashboardPage() {
           <Section
             title={dict.dashboard.tasks}
             action={
-              <Link href="/tasks" className="text-xs text-brand-700 hover:underline font-medium">
+              <Link
+                href={queryUrl("/tasks", { property: property.id })}
+                className="text-xs text-brand-700 hover:underline font-medium"
+              >
                 {dict.common.viewAll}
               </Link>
             }
@@ -148,6 +155,7 @@ export default async function DashboardPage() {
                   return (
                     <Card
                       key={task.id}
+                      href={`/tasks/${task.id}/edit`}
                       padding="sm"
                       className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                     >
@@ -185,7 +193,7 @@ export default async function DashboardPage() {
             ) : (
               <div className="space-y-3">
                 {history.map((event) => (
-                  <Card key={event.id} padding="sm">
+                  <Card key={event.id} href={`/events/${event.id}/edit`} padding="sm">
                     <p className="font-medium text-stone-900">{event.title}</p>
                     <p className="text-sm text-stone-500 mt-1">
                       {formatDate(event.completedAt, locale)}

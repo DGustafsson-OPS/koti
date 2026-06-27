@@ -9,10 +9,13 @@ DEPLOY_USER="${DEPLOY_USER:-koti-ssh}"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "→ Syncing source to ${DEPLOY_USER}@${DEPLOY_HOST}:${APP_DIR}"
-rsync -avz --delete \
+rsync -rlvz --delete --omit-dir-times --no-perms \
   --exclude node_modules \
   --exclude .next \
   --exclude .git \
+  --exclude release \
+  --exclude .env \
+  --exclude data \
   --exclude "*.db" \
   --exclude .env.local \
   "${REPO_ROOT}/" "${DEPLOY_USER}@${DEPLOY_HOST}:${APP_DIR}/"
@@ -42,6 +45,9 @@ cp -r .next/standalone/. release/
 mkdir -p release/.next
 cp -r .next/static release/.next/static
 cp -r public release/public 2>/dev/null || mkdir -p release/public
+
+mkdir -p "${APP_DIR}/data/uploads"
+chmod 750 "${APP_DIR}/data" "${APP_DIR}/data/uploads" 2>/dev/null || true
 
 EOF
 

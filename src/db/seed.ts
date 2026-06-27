@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import {
   properties,
+  buildings,
   rooms,
   materials,
   roomMaterials,
@@ -33,26 +34,52 @@ async function seed() {
     updatedAt: now,
   });
 
+  const mainBuildingId = uuid();
+  const garageBuildingId = uuid();
+
+  await db.insert(buildings).values([
+    {
+      id: mainBuildingId,
+      propertyId,
+      name: "Main house",
+      buildingType: "main",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: garageBuildingId,
+      propertyId,
+      name: "Attached garage",
+      buildingType: "garage",
+      notes: "Breaker panel on east wall",
+      createdAt: now,
+      updatedAt: now,
+    },
+  ]);
+
   const roomIds = {
     living: uuid(),
     kitchen: uuid(),
     bathroom: uuid(),
     bedroom: uuid(),
     utility: uuid(),
+    garage: uuid(),
   };
 
   for (const [key, id] of Object.entries(roomIds)) {
-    const names: Record<string, { name: string; floor: string; notes: string }> = {
-      living: { name: "Living Room", floor: "Ground", notes: "South-facing, oak parquet floor" },
-      kitchen: { name: "Kitchen", floor: "Ground", notes: "Renovated 2022" },
-      bathroom: { name: "Bathroom", floor: "Ground", notes: "Main bathroom" },
-      bedroom: { name: "Master Bedroom", floor: "1st", notes: "" },
-      utility: { name: "Utility Room", floor: "Ground", notes: "Boiler and laundry" },
+    const names: Record<string, { name: string; floor: string; notes: string; buildingId: string }> = {
+      living: { name: "Living Room", floor: "Ground", notes: "South-facing, oak parquet floor", buildingId: mainBuildingId },
+      kitchen: { name: "Kitchen", floor: "Ground", notes: "Renovated 2022", buildingId: mainBuildingId },
+      bathroom: { name: "Bathroom", floor: "Ground", notes: "Main bathroom", buildingId: mainBuildingId },
+      bedroom: { name: "Master Bedroom", floor: "1st", notes: "", buildingId: mainBuildingId },
+      utility: { name: "Utility Room", floor: "Ground", notes: "Boiler and laundry", buildingId: mainBuildingId },
+      garage: { name: "Garage", floor: "Ground", notes: "Two-car, workshop corner", buildingId: garageBuildingId },
     };
     const r = names[key];
     await db.insert(rooms).values({
       id,
       propertyId,
+      buildingId: r.buildingId,
       name: r.name,
       floor: r.floor,
       notes: r.notes,

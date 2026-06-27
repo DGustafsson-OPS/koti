@@ -7,6 +7,34 @@ import {
   index,
 } from "drizzle-orm/mysql-core";
 
+export const users = mysqlTable(
+  "users",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    email: varchar("email", { length: 255 }),
+    name: varchar("name", { length: 255 }),
+    image: text("image"),
+    role: varchar("role", { length: 32 }).notNull().default("member"),
+    createdAt: int("created_at").notNull(),
+    updatedAt: int("updated_at").notNull(),
+  },
+  (t) => [index("idx_users_email").on(t.email)]
+);
+
+export const accounts = mysqlTable(
+  "accounts",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: varchar("user_id", { length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    provider: varchar("provider", { length: 64 }).notNull(),
+    providerAccountId: varchar("provider_account_id", { length: 255 }).notNull(),
+    createdAt: int("created_at").notNull(),
+  },
+  (t) => [index("idx_accounts_provider").on(t.provider, t.providerAccountId)]
+);
+
 export const properties = mysqlTable("properties", {
   id: varchar("id", { length: 36 }).primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -19,6 +47,22 @@ export const properties = mysqlTable("properties", {
   updatedAt: int("updated_at").notNull(),
 });
 
+export const buildings = mysqlTable(
+  "buildings",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    propertyId: varchar("property_id", { length: 36 })
+      .notNull()
+      .references(() => properties.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 255 }).notNull(),
+    buildingType: varchar("building_type", { length: 64 }),
+    notes: text("notes"),
+    createdAt: int("created_at").notNull(),
+    updatedAt: int("updated_at").notNull(),
+  },
+  (t) => [index("idx_buildings_property").on(t.propertyId)]
+);
+
 export const rooms = mysqlTable(
   "rooms",
   {
@@ -26,13 +70,19 @@ export const rooms = mysqlTable(
     propertyId: varchar("property_id", { length: 36 })
       .notNull()
       .references(() => properties.id, { onDelete: "cascade" }),
+    buildingId: varchar("building_id", { length: 36 }).references(() => buildings.id, {
+      onDelete: "cascade",
+    }),
     name: varchar("name", { length: 255 }).notNull(),
     floor: varchar("floor", { length: 64 }),
     notes: text("notes"),
     createdAt: int("created_at").notNull(),
     updatedAt: int("updated_at").notNull(),
   },
-  (t) => [index("idx_rooms_property").on(t.propertyId)]
+  (t) => [
+    index("idx_rooms_property").on(t.propertyId),
+    index("idx_rooms_building").on(t.buildingId),
+  ]
 );
 
 export const materials = mysqlTable(
@@ -206,7 +256,31 @@ export const entityLinks = mysqlTable(
   ]
 );
 
+export const attachments = mysqlTable(
+  "attachments",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    propertyId: varchar("property_id", { length: 36 })
+      .notNull()
+      .references(() => properties.id, { onDelete: "cascade" }),
+    entityType: varchar("entity_type", { length: 64 }).notNull(),
+    entityId: varchar("entity_id", { length: 36 }).notNull(),
+    filename: varchar("filename", { length: 255 }).notNull(),
+    storedName: varchar("stored_name", { length: 255 }).notNull(),
+    mimeType: varchar("mime_type", { length: 128 }),
+    sizeBytes: int("size_bytes"),
+    createdAt: int("created_at").notNull(),
+  },
+  (t) => [
+    index("idx_attachments_entity").on(t.entityType, t.entityId),
+    index("idx_attachments_property").on(t.propertyId),
+  ]
+);
+
+export type User = typeof users.$inferSelect;
+export type Account = typeof accounts.$inferSelect;
 export type Property = typeof properties.$inferSelect;
+export type Building = typeof buildings.$inferSelect;
 export type Room = typeof rooms.$inferSelect;
 export type Material = typeof materials.$inferSelect;
 export type Asset = typeof assets.$inferSelect;
@@ -214,3 +288,4 @@ export type Warranty = typeof warranties.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
 export type MaintenanceEvent = typeof maintenanceEvents.$inferSelect;
 export type Note = typeof notes.$inferSelect;
+export type Attachment = typeof attachments.$inferSelect;

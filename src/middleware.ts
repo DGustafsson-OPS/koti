@@ -1,43 +1,32 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { jwtVerify } from "jose";
+import NextAuth from "next-auth";
+import { authConfig } from "@/auth.config";
 import { publicUrl } from "@/lib/public-url";
 
-async function isAuthenticated(request: NextRequest) {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret) return false;
+const { auth } = NextAuth(authConfig);
 
-  const token = request.cookies.get("koti-session")?.value;
-  if (!token) return false;
-
-  try {
-    await jwtVerify(token, new TextEncoder().encode(secret));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export async function middleware(request: NextRequest) {
+export default auth((request) => {
   const { pathname } = request.nextUrl;
+  const isLoggedIn = !!request.auth;
+
+  if (pathname.startsWith("/api/auth")) {
+    return;
+  }
 
   if (pathname === "/login") {
-    if (await isAuthenticated(request)) {
-      return NextResponse.redirect(publicUrl(request, "/"));
+    if (isLoggedIn) {
+      return Response.redirect(publicUrl(request, "/"));
     }
-    return NextResponse.next();
+    return;
   }
 
-  if (!(await isAuthenticated(request))) {
+  if (!isLoggedIn) {
     const loginUrl = publicUrl(request, "/login");
     if (pathname !== "/") {
       loginUrl.searchParams.set("from", pathname);
     }
-    return NextResponse.redirect(loginUrl);
+    return Response.redirect(loginUrl);
   }
-
-  return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
-import { searchAll } from "@/lib/queries";
+import { searchAll, getProperties } from "@/lib/queries";
 import {
   PageContainer,
   PageHeader,
@@ -9,6 +9,8 @@ import {
   EmptyState,
   SearchInput,
   Panel,
+  PropertyTabs,
+  FilterTabs,
 } from "@/components/ui";
 import {
   getDictionary,
@@ -16,30 +18,62 @@ import {
   interpolate,
 } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { queryUrl } from "@/lib/query-url";
+
+const SEARCH_TYPE_KEYS = ["property", "room", "material", "asset", "task", "event"] as const;
 
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; property?: string }>;
+  searchParams: Promise<{ q?: string; property?: string; type?: string }>;
 }) {
   const locale = await getLocale();
   const dict = getDictionary(locale);
 
-  const { q, property } = await searchParams;
-  const results = q ? await searchAll(q, property) : [];
+  const { q, property, type } = await searchParams;
+  const properties = await getProperties();
+  const activePropertyId = property ?? properties[0]?.id;
+  const results = q ? await searchAll(q, activePropertyId, type) : [];
+
+  const filterParams = { q, property: activePropertyId };
 
   return (
-    <PageContainer size="narrow">
+    <PageContainer size="wide">
       <PageHeader title={dict.search.title} subtitle={dict.search.subtitle} />
 
-      <form className="mb-8">
+      <PropertyTabs
+        properties={properties}
+        activeId={activePropertyId}
+        basePath="/search"
+        params={{ q, type }}
+      />
+
+      <form className="mb-6">
         <SearchInput
           name="q"
           defaultValue={q ?? ""}
           placeholder={dict.search.placeholder}
           autoFocus
         />
+        {activePropertyId && <input type="hidden" name="property" value={activePropertyId} />}
+        {type && <input type="hidden" name="type" value={type} />}
       </form>
+
+      {q && (
+        <FilterTabs
+          items={[
+            { key: "all", label: dict.search.allTypes },
+            ...SEARCH_TYPE_KEYS.map((key) => ({
+              key,
+              label: entityTypeLabel(dict, key),
+            })),
+          ]}
+          activeKey={type ?? "all"}
+          basePath="/search"
+          paramName="type"
+          params={filterParams}
+        />
+      )}
 
       {!q && (
         <Panel className="text-sm text-stone-500">
@@ -48,7 +82,10 @@ export default async function SearchPage({
             {dict.search.examples.map((example) => (
               <li key={example}>
                 <Link
-                  href={`/search?q=${encodeURIComponent(example)}`}
+                  href={queryUrl("/search", {
+                    q: example,
+                    property: activePropertyId,
+                  })}
                   className="text-brand-700 hover:underline"
                 >
                   {example}

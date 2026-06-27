@@ -2,6 +2,13 @@ import { Home } from "lucide-react";
 import { getDictionary} from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { LoginForm } from "./login-form";
+import { AppleSignInButton } from "./apple-sign-in-button";
+
+const appleConfigured =
+  !!process.env.AUTH_APPLE_ID &&
+  !!process.env.AUTH_APPLE_TEAM_ID &&
+  !!process.env.AUTH_APPLE_KEY_ID &&
+  !!process.env.AUTH_APPLE_PRIVATE_KEY;
 
 export default async function LoginPage({
   searchParams,
@@ -49,7 +56,13 @@ export default async function LoginPage({
             <p className="text-stone-500 mt-2 text-sm">{dict.auth.subtitle}</p>
           </div>
 
-          <div className="bg-surface border border-stone-200/80 rounded-2xl p-6 shadow-sm">
+          <div className="bg-surface border border-stone-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+            {appleConfigured && (
+              <>
+                <AppleSignInButton callbackUrl={from ?? "/"} />
+                <p className="text-center text-xs text-stone-400">{dict.settings.orContinueWith}</p>
+              </>
+            )}
             <LoginForm from={from ?? "/"} />
           </div>
         </div>
