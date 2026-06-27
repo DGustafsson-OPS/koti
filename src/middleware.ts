@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { publicUrl } from "@/lib/public-url";
 
 async function isAuthenticated(request: NextRequest) {
   const secret = process.env.AUTH_SECRET;
@@ -22,13 +23,13 @@ export async function middleware(request: NextRequest) {
 
   if (pathname === "/login") {
     if (await isAuthenticated(request)) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(publicUrl(request, "/"));
     }
     return NextResponse.next();
   }
 
   if (!(await isAuthenticated(request))) {
-    const loginUrl = new URL("/login", request.url);
+    const loginUrl = publicUrl(request, "/login");
     if (pathname !== "/") {
       loginUrl.searchParams.set("from", pathname);
     }
