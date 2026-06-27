@@ -51,7 +51,7 @@ export const fi = {
     username: "Käyttäjätunnus",
     password: "Salasana",
     invalidCredentials: "Virheellinen käyttäjätunnus tai salasana",
-    usernamePlaceholder: "admin",
+    usernamePlaceholder: "kayttajatunnus",
   },
   settings: {
     title: "Profiiliasetukset",

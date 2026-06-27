@@ -51,7 +51,7 @@ export const en = {
     username: "Username",
     password: "Password",
     invalidCredentials: "Invalid username or password",
-    usernamePlaceholder: "admin",
+    usernamePlaceholder: "your.username",
   },
   settings: {
     title: "Profile settings",

@@ -23,5 +23,3 @@ jobs:
         env:
           DATABASE_URL: mysql://ci:ci@127.0.0.1:3306/koti
           AUTH_SECRET: ci-build-secret-not-for-production
-          AUTH_USERNAME: admin
-          AUTH_PASSWORD: ci

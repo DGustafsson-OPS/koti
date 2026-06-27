@@ -6,6 +6,9 @@ import { eq, and, asc, inArray, sql } from "drizzle-orm";
 import { now } from "@/lib/utils";
 import { v4 as uuid } from "uuid";
 import { revalidatePath } from "next/cache";
+import { hashPassword, verifyPassword, validatePassword } from "@/lib/password";
+
+const CREDENTIALS_PROVIDER = "credentials";
 
 export async function getUserById(id: string) {
   const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -170,19 +173,8 @@ export async function upsertOAuthUser(data: {
   return user!;
 }
 
-import { hashPassword, verifyPassword, validatePassword } from "@/lib/password";
-
-const CREDENTIALS_PROVIDER = "credentials";
-
 function credentialsEmail(username: string) {
   return `${username.trim().toLowerCase()}@local.koti`;
-}
-
-function envCredentialsMatch(username: string, password: string) {
-  const expectedUser = (process.env.AUTH_USERNAME ?? "admin").trim().toLowerCase();
-  const expectedPassword = process.env.AUTH_PASSWORD;
-  if (!expectedPassword) return false;
-  return username.trim().toLowerCase() === expectedUser && password === expectedPassword;
 }
 
 export async function getCredentialsAccountByUsername(username: string) {
@@ -300,26 +292,10 @@ export async function verifyCredentialsUser(username: string, password: string) 
   if (!trimmed || !password) return null;
 
   const existing = await getCredentialsAccountByUsername(normalized);
+  if (!existing?.account.passwordHash) return null;
 
-  if (existing?.account.passwordHash) {
-    const valid = await verifyPassword(password, existing.account.passwordHash);
-    return valid ? existing.user : null;
-  }
-
-  if (existing && envCredentialsMatch(trimmed, password)) {
-    await setAccountPasswordHash(existing.account.id, password, normalized);
-    return existing.user;
-  }
-
-  if (!existing && envCredentialsMatch(trimmed, password)) {
-    const userCount = await db.select({ id: users.id }).from(users);
-    const envUser = (process.env.AUTH_USERNAME ?? "admin").trim().toLowerCase();
-    const role =
-      userCount.length === 0 || normalized === envUser ? "admin" : "member";
-    return createCredentialsUser({ username: trimmed, password, role });
-  }
-
-  return null;
+  const valid = await verifyPassword(password, existing.account.passwordHash);
+  return valid ? existing.user : null;
 }
 
 export async function setCredentialsPassword(userId: string, password: string) {
