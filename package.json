@@ -16,6 +16,7 @@
   "dependencies": {
     "drizzle-orm": "^0.44.2",
     "jose": "^6.2.3",
+    "lucide-react": "^1.21.0",
     "mysql2": "^3.14.1",
     "next": "^15.3.4",
     "react": "^19.1.0",

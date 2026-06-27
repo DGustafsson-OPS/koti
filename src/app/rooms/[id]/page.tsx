@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import {
   getRoom,
   getProperty,
@@ -9,7 +8,14 @@ import {
   getRoomTasks,
   getRoomHistory,
 } from "@/lib/queries";
-import { PageHeader, Card, Section, Badge } from "@/components/ui";
+import {
+  PageContainer,
+  PageHeader,
+  Card,
+  Section,
+  Badge,
+  Callout,
+} from "@/components/ui";
 import { formatDate, formatCurrency, CATEGORY_LABELS, PRIORITY_COLORS } from "@/lib/utils";
 import { CreateNoteForm } from "@/components/forms/create-note-form";
 
@@ -28,49 +34,41 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
   ]);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
+    <PageContainer>
       <PageHeader
         title={room.name}
         subtitle={[property?.name, room.floor ? `${room.floor} floor` : null]
           .filter(Boolean)
           .join(" · ")}
-        action={
-          <Link href={`/properties/${room.propertyId}`} className="text-sm text-stone-500 hover:text-stone-700">
-            ← Back to property
-          </Link>
-        }
+        back={{ href: `/properties/${room.propertyId}`, label: property?.name ?? "Property" }}
       />
 
-      {room.notes && (
-        <div className="mb-6 p-4 bg-stone-100 rounded-xl text-sm text-stone-600">{room.notes}</div>
-      )}
+      {room.notes && <Callout>{room.notes}</Callout>}
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <Section title="Materials & Finishes">
+      <div className="grid md:grid-cols-2 gap-10">
+        <Section title="Materials & finishes">
           {materials.length === 0 ? (
-            <p className="text-sm text-stone-400">No materials linked to this room</p>
+            <p className="text-sm text-stone-500">No materials linked to this room.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {materials.map(({ roomMaterial, material }) => (
-                <Card key={roomMaterial.id} className="p-3">
-                  <div className="flex justify-between items-start">
+                <Card key={roomMaterial.id} padding="sm">
+                  <div className="flex justify-between items-start gap-3">
                     <div>
-                      <p className="font-medium text-sm">{material.name}</p>
-                      <p className="text-xs text-stone-400">
+                      <p className="font-medium text-stone-900">{material.name}</p>
+                      <p className="text-xs text-stone-500 mt-0.5">
                         {[material.brand, material.colorCode, material.finish]
                           .filter(Boolean)
                           .join(" · ")}
                       </p>
                       {roomMaterial.surface && (
-                        <p className="text-xs text-stone-400 mt-1 capitalize">
-                          {roomMaterial.surface}
-                        </p>
+                        <p className="text-xs text-stone-400 mt-1 capitalize">{roomMaterial.surface}</p>
                       )}
                     </div>
                     <Badge>{CATEGORY_LABELS[material.category] ?? material.category}</Badge>
                   </div>
                   {material.leftoverLocation && (
-                    <p className="text-xs text-brand-600 mt-2">Leftover: {material.leftoverLocation}</p>
+                    <p className="text-xs text-brand-700 mt-2">Leftover: {material.leftoverLocation}</p>
                   )}
                 </Card>
               ))}
@@ -78,15 +76,15 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
           )}
         </Section>
 
-        <Section title="Inventory & Assets">
+        <Section title="Inventory & assets">
           {assets.length === 0 ? (
-            <p className="text-sm text-stone-400">No assets in this room</p>
+            <p className="text-sm text-stone-500">No assets in this room.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {assets.map((a) => (
-                <Card key={a.id} href={`/assets/${a.id}`} className="p-3">
-                  <p className="font-medium text-sm">{a.name}</p>
-                  <p className="text-xs text-stone-400">
+                <Card key={a.id} href={`/assets/${a.id}`} padding="sm">
+                  <p className="font-medium text-stone-900">{a.name}</p>
+                  <p className="text-xs text-stone-500 mt-0.5">
                     {[a.brand, a.model].filter(Boolean).join(" · ")}
                   </p>
                 </Card>
@@ -97,17 +95,17 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
 
         <Section title="Tasks">
           {pendingTasks.length === 0 ? (
-            <p className="text-sm text-stone-400">No pending tasks</p>
+            <p className="text-sm text-stone-500">No pending tasks.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {pendingTasks.map((t) => (
-                <Card key={t.id} className="p-3 flex justify-between">
+                <Card key={t.id} padding="sm" className="flex justify-between items-start gap-3">
                   <div>
-                    <p className="font-medium text-sm">{t.title}</p>
-                    <p className="text-xs text-stone-400">{formatDate(t.dueDate)}</p>
+                    <p className="font-medium text-stone-900">{t.title}</p>
+                    <p className="text-xs text-stone-500 mt-0.5">{formatDate(t.dueDate)}</p>
                   </div>
                   <span
-                    className={`text-xs px-2 py-0.5 rounded-full h-fit ${PRIORITY_COLORS[t.priority] ?? ""}`}
+                    className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize shrink-0 ${PRIORITY_COLORS[t.priority] ?? ""}`}
                   >
                     {t.priority}
                   </span>
@@ -119,13 +117,13 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
 
         <Section title="History">
           {history.length === 0 ? (
-            <p className="text-sm text-stone-400">No history for this room</p>
+            <p className="text-sm text-stone-500">No history for this room.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {history.map((e) => (
-                <Card key={e.id} className="p-3">
-                  <p className="font-medium text-sm">{e.title}</p>
-                  <p className="text-xs text-stone-400">
+                <Card key={e.id} padding="sm">
+                  <p className="font-medium text-stone-900">{e.title}</p>
+                  <p className="text-xs text-stone-500 mt-0.5">
                     {formatDate(e.completedAt)}
                     {e.cost ? ` · ${formatCurrency(e.cost)}` : ""}
                   </p>
@@ -135,13 +133,13 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
           )}
         </Section>
 
-        <Section title="Notes">
+        <Section title="Notes" className="md:col-span-2">
           {roomNotes.length > 0 && (
-            <div className="space-y-2 mb-4">
+            <div className="space-y-3 mb-4">
               {roomNotes.map((n) => (
-                <Card key={n.id} className="p-3">
-                  <p className="text-sm">{n.content}</p>
-                  <p className="text-xs text-stone-400 mt-1">{formatDate(n.createdAt)}</p>
+                <Card key={n.id} padding="sm">
+                  <p className="text-sm leading-relaxed text-stone-700">{n.content}</p>
+                  <p className="text-xs text-stone-400 mt-2">{formatDate(n.createdAt)}</p>
                 </Card>
               ))}
             </div>
@@ -149,6 +147,6 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
           <CreateNoteForm roomId={id} />
         </Section>
       </div>
-    </div>
+    </PageContainer>
   );
 }

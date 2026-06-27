@@ -1,21 +1,58 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
+
+export function PageContainer({
+  children,
+  className,
+  size = "default",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  size?: "default" | "narrow" | "wide";
+}) {
+  const widths = {
+    narrow: "max-w-3xl",
+    default: "max-w-6xl",
+    wide: "max-w-7xl",
+  };
+
+  return (
+    <div className={cn("mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 lg:py-10", widths[size], className)}>
+      {children}
+    </div>
+  );
+}
 
 export function PageHeader({
   title,
   subtitle,
   action,
+  back,
 }: {
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
+  back?: { href: string; label: string };
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 mb-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-stone-900">{title}</h1>
-        {subtitle && <p className="text-stone-500 mt-1">{subtitle}</p>}
+    <div className="mb-8">
+      {back && (
+        <Link
+          href={back.href}
+          className="inline-flex items-center text-sm text-stone-500 hover:text-brand-700 mb-3 transition-colors"
+        >
+          ← {back.label}
+        </Link>
+      )}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl sm:text-4xl font-semibold text-stone-900 tracking-tight">
+            {title}
+          </h1>
+          {subtitle && <p className="text-stone-500 mt-2 text-base leading-relaxed">{subtitle}</p>}
+        </div>
+        {action && <div className="shrink-0">{action}</div>}
       </div>
-      {action}
     </div>
   );
 }
@@ -24,21 +61,31 @@ export function Card({
   children,
   className,
   href,
+  padding = "default",
 }: {
   children: React.ReactNode;
   className?: string;
   href?: string;
+  padding?: "none" | "sm" | "default";
 }) {
+  const paddingClass = {
+    none: "",
+    sm: "p-4",
+    default: "p-5",
+  }[padding];
+
   const cls = cn(
-    "bg-white border border-stone-200 rounded-xl p-5 shadow-sm",
-    href && "hover:border-brand-500 hover:shadow-md transition-all cursor-pointer block",
+    "bg-surface border border-stone-200/80 rounded-2xl shadow-sm shadow-stone-200/40",
+    href && "hover:border-brand-300 hover:shadow-md hover:shadow-brand-100/50 transition-all duration-200 block",
+    paddingClass,
     className
   );
+
   if (href) {
     return (
-      <a href={href} className={cls}>
+      <Link href={href} className={cls}>
         {children}
-      </a>
+      </Link>
     );
   }
   return <div className={cls}>{children}</div>;
@@ -52,14 +99,19 @@ export function Badge({
   variant?: "default" | "green" | "red" | "yellow" | "blue";
 }) {
   const colors = {
-    default: "bg-stone-100 text-stone-600",
-    green: "bg-green-50 text-green-700",
-    red: "bg-red-50 text-red-700",
-    yellow: "bg-amber-50 text-amber-700",
-    blue: "bg-blue-50 text-blue-700",
+    default: "bg-stone-100 text-stone-600 ring-stone-200/60",
+    green: "bg-emerald-50 text-emerald-800 ring-emerald-200/60",
+    red: "bg-red-50 text-red-700 ring-red-200/60",
+    yellow: "bg-amber-50 text-amber-800 ring-amber-200/60",
+    blue: "bg-sky-50 text-sky-800 ring-sky-200/60",
   };
   return (
-    <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium", colors[variant])}>
+    <span
+      className={cn(
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ring-1 ring-inset",
+        colors[variant]
+      )}
+    >
       {children}
     </span>
   );
@@ -69,22 +121,30 @@ export function Button({
   children,
   type = "button",
   variant = "primary",
+  size = "default",
   className,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "danger";
+  size?: "default" | "sm";
 }) {
   const variants = {
-    primary: "bg-brand-600 text-white hover:bg-brand-700",
-    secondary: "bg-white border border-stone-300 text-stone-700 hover:bg-stone-50",
-    ghost: "text-stone-600 hover:bg-stone-100",
+    primary: "bg-brand-700 text-white hover:bg-brand-800 shadow-sm shadow-brand-900/10",
+    secondary: "bg-surface border border-stone-200 text-stone-700 hover:bg-stone-50 hover:border-stone-300",
+    ghost: "text-stone-600 hover:bg-stone-100/80 hover:text-stone-900",
+    danger: "bg-red-600 text-white hover:bg-red-700",
+  };
+  const sizes = {
+    default: "px-4 py-2.5 text-sm",
+    sm: "px-3 py-1.5 text-xs",
   };
   return (
     <button
       type={type}
       className={cn(
-        "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50",
+        "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all disabled:opacity-50 disabled:pointer-events-none",
         variants[variant],
+        sizes[size],
         className
       )}
       {...props}
@@ -94,19 +154,50 @@ export function Button({
   );
 }
 
+export function ButtonLink({
+  href,
+  children,
+  variant = "primary",
+  className,
+}: {
+  href: string;
+  children: React.ReactNode;
+  variant?: "primary" | "secondary";
+  className?: string;
+}) {
+  const variants = {
+    primary: "bg-brand-700 text-white hover:bg-brand-800 shadow-sm shadow-brand-900/10",
+    secondary: "bg-surface border border-stone-200 text-stone-700 hover:bg-stone-50",
+  };
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all",
+        variants[variant],
+        className
+      )}
+    >
+      {children}
+    </Link>
+  );
+}
+
 export function Section({
   title,
   action,
   children,
+  className,
 }: {
   title: string;
   action?: React.ReactNode;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <section className="mb-8">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wide">{title}</h2>
+    <section className={cn("mb-8", className)}>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-widest">{title}</h2>
         {action}
       </div>
       {children}
@@ -114,11 +205,41 @@ export function Section({
   );
 }
 
-export function EmptyState({ message, action }: { message: string; action?: React.ReactNode }) {
+export function Panel({
+  children,
+  title,
+  className,
+}: {
+  children: React.ReactNode;
+  title?: string;
+  className?: string;
+}) {
   return (
-    <div className="text-center py-12 text-stone-400">
-      <p className="mb-4">{message}</p>
-      {action}
+    <div className={cn("bg-surface border border-stone-200/80 rounded-2xl p-5 shadow-sm", className)}>
+      {title && <h3 className="text-sm font-semibold text-stone-800 mb-4">{title}</h3>}
+      {children}
+    </div>
+  );
+}
+
+export function EmptyState({
+  message,
+  action,
+  icon,
+}: {
+  message: string;
+  action?: React.ReactNode;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div className="text-center py-16 px-6">
+      {icon && (
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-stone-100 text-stone-400 mb-4">
+          {icon}
+        </div>
+      )}
+      <p className="text-stone-500 max-w-sm mx-auto leading-relaxed">{message}</p>
+      {action && <div className="mt-6">{action}</div>}
     </div>
   );
 }
@@ -128,22 +249,63 @@ export function StatCard({
   value,
   sub,
   variant,
+  icon,
 }: {
   label: string;
   value: string | number;
   sub?: string;
   variant?: "default" | "warning" | "danger";
+  icon?: React.ReactNode;
 }) {
-  const border = {
-    default: "border-stone-200",
-    warning: "border-amber-200 bg-amber-50",
-    danger: "border-red-200 bg-red-50",
+  const styles = {
+    default: "bg-surface border-stone-200/80",
+    warning: "bg-amber-50/80 border-amber-200/80",
+    danger: "bg-red-50/80 border-red-200/80",
   };
   return (
-    <div className={cn("bg-white border rounded-xl p-4", border[variant ?? "default"])}>
-      <p className="text-xs text-stone-500 uppercase tracking-wide">{label}</p>
-      <p className="text-2xl font-semibold mt-1 text-stone-900">{value}</p>
-      {sub && <p className="text-xs text-stone-400 mt-1">{sub}</p>}
+    <div
+      className={cn(
+        "border rounded-2xl p-5 shadow-sm shadow-stone-200/30",
+        styles[variant ?? "default"]
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">{label}</p>
+        {icon && <div className="text-stone-400">{icon}</div>}
+      </div>
+      <p className="font-display text-3xl font-semibold mt-2 text-stone-900 tracking-tight">{value}</p>
+      {sub && <p className="text-xs text-stone-400 mt-1.5">{sub}</p>}
+    </div>
+  );
+}
+
+export function PropertyTabs({
+  properties,
+  activeId,
+  basePath,
+}: {
+  properties: { id: string; name: string }[];
+  activeId?: string;
+  basePath: string;
+}) {
+  if (properties.length <= 1) return null;
+
+  return (
+    <div className="flex gap-2 mb-8 flex-wrap">
+      {properties.map((p) => (
+        <Link
+          key={p.id}
+          href={`${basePath}?property=${p.id}`}
+          className={cn(
+            "px-4 py-2 rounded-xl text-sm font-medium transition-all",
+            p.id === activeId
+              ? "bg-brand-700 text-white shadow-sm"
+              : "bg-surface text-stone-600 border border-stone-200 hover:border-brand-300 hover:text-brand-800"
+          )}
+        >
+          {p.name}
+        </Link>
+      ))}
     </div>
   );
 }
@@ -154,9 +316,9 @@ export function Input({
 }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string }) {
   return (
     <label className="block">
-      {label && <span className="block text-sm font-medium text-stone-700 mb-1">{label}</span>}
+      {label && <span className="block text-sm font-medium text-stone-700 mb-1.5">{label}</span>}
       <input
-        className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+        className="w-full bg-surface border border-stone-200 rounded-xl px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-shadow"
         {...props}
       />
     </label>
@@ -170,9 +332,9 @@ export function Select({
 }: React.SelectHTMLAttributes<HTMLSelectElement> & { label?: string }) {
   return (
     <label className="block">
-      {label && <span className="block text-sm font-medium text-stone-700 mb-1">{label}</span>}
+      {label && <span className="block text-sm font-medium text-stone-700 mb-1.5">{label}</span>}
       <select
-        className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white"
+        className="w-full bg-surface border border-stone-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-shadow"
         {...props}
       >
         {children}
@@ -187,11 +349,38 @@ export function Textarea({
 }: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label?: string }) {
   return (
     <label className="block">
-      {label && <span className="block text-sm font-medium text-stone-700 mb-1">{label}</span>}
+      {label && <span className="block text-sm font-medium text-stone-700 mb-1.5">{label}</span>}
       <textarea
-        className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-y min-h-[80px]"
+        className="w-full bg-surface border border-stone-200 rounded-xl px-3.5 py-2.5 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 resize-y min-h-[96px] transition-shadow"
         {...props}
       />
     </label>
+  );
+}
+
+export function Callout({
+  children,
+  variant = "info",
+}: {
+  children: React.ReactNode;
+  variant?: "info" | "warning";
+}) {
+  const styles = {
+    info: "bg-brand-50 border-brand-200/80 text-brand-900",
+    warning: "bg-amber-50 border-amber-200/80 text-amber-900",
+  };
+  return (
+    <div className={cn("mb-6 p-4 border rounded-2xl text-sm leading-relaxed", styles[variant])}>
+      {children}
+    </div>
+  );
+}
+
+export function SearchInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      className="w-full bg-surface border border-stone-200 rounded-2xl px-5 py-3.5 text-base text-stone-900 placeholder:text-stone-400 shadow-sm shadow-stone-200/40 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-shadow"
+      {...props}
+    />
   );
 }

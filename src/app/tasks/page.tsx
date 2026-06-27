@@ -1,10 +1,16 @@
-import Link from "next/link";
+import { CheckSquare } from "lucide-react";
+import { getProperties, getTasks, completeTask } from "@/lib/queries";
 import {
-  getProperties,
-  getTasks,
-  completeTask,
-} from "@/lib/queries";
-import { PageHeader, Card, Badge, Button, EmptyState } from "@/components/ui";
+  PageContainer,
+  PageHeader,
+  Card,
+  Badge,
+  Button,
+  EmptyState,
+  PropertyTabs,
+  Input,
+  Panel,
+} from "@/components/ui";
 import { formatDate, PRIORITY_COLORS } from "@/lib/utils";
 import { CreateTaskForm } from "@/components/forms/create-task-form";
 import { db } from "@/db";
@@ -44,88 +50,58 @@ export default async function TasksPage({
   const ts = Math.floor(Date.now() / 1000);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <PageHeader title="Tasks" subtitle="Maintenance and reminders" />
+    <PageContainer size="narrow">
+      <PageHeader title="Tasks" subtitle="Maintenance reminders and to-dos" />
 
-      {properties.length > 1 && (
-        <div className="flex gap-2 mb-6 flex-wrap">
-          {properties.map((p) => (
-            <Link
-              key={p.id}
-              href={`/tasks?property=${p.id}`}
-              className={`px-3 py-1 rounded-full text-sm border ${
-                p.id === activePropertyId
-                  ? "bg-brand-600 text-white border-brand-600"
-                  : "bg-white text-stone-600 border-stone-300 hover:border-brand-500"
-              }`}
-            >
-              {p.name}
-            </Link>
-          ))}
-        </div>
-      )}
+      <PropertyTabs properties={properties} activeId={activePropertyId} basePath="/tasks" />
 
       {activePropertyId && (
-        <div className="mb-8">
+        <Panel title="New task" className="mb-8">
           <CreateTaskForm
             propertyId={activePropertyId}
             rooms={propertyRooms}
             assets={propertyAssets}
           />
-        </div>
+        </Panel>
       )}
 
       {tasks.length === 0 ? (
-        <EmptyState message="No pending tasks" />
+        <EmptyState
+          icon={<CheckSquare className="w-6 h-6" />}
+          message="No pending tasks. Add one above or complete existing items from your property page."
+        />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {tasks.map((task) => {
             const isOverdue = task.dueDate != null && task.dueDate < ts;
             return (
-              <Card key={task.id} className="p-4">
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div>
-                    <p className="font-medium">{task.title}</p>
-                    {task.description && (
-                      <p className="text-sm text-stone-500 mt-1">{task.description}</p>
+              <Card key={task.id} padding="sm">
+                <div className="mb-4">
+                  <p className="font-medium text-stone-900">{task.title}</p>
+                  {task.description && (
+                    <p className="text-sm text-stone-500 mt-1 leading-relaxed">{task.description}</p>
+                  )}
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    {task.dueDate && (
+                      <span className="text-xs text-stone-500">Due {formatDate(task.dueDate)}</span>
                     )}
-                    <div className="flex gap-2 mt-2 flex-wrap">
-                      {task.dueDate && (
-                        <span className="text-xs text-stone-400">Due {formatDate(task.dueDate)}</span>
-                      )}
-                      {task.recurrence !== "none" && (
-                        <Badge variant="blue">{task.recurrence}</Badge>
-                      )}
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${PRIORITY_COLORS[task.priority] ?? ""}`}
-                      >
-                        {task.priority}
-                      </span>
-                      {isOverdue && <Badge variant="red">Overdue</Badge>}
-                    </div>
+                    {task.recurrence !== "none" && <Badge variant="blue">{task.recurrence}</Badge>}
+                    <span
+                      className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${PRIORITY_COLORS[task.priority] ?? ""}`}
+                    >
+                      {task.priority}
+                    </span>
+                    {isOverdue && <Badge variant="red">Overdue</Badge>}
                   </div>
                 </div>
-                <form action={handleComplete} className="border-t border-stone-100 pt-3 mt-3">
+                <form action={handleComplete} className="border-t border-stone-100 pt-4">
                   <input type="hidden" name="taskId" value={task.id} />
-                  <div className="grid grid-cols-3 gap-2 mb-2">
-                    <input
-                      name="cost"
-                      type="number"
-                      placeholder="Cost (€)"
-                      className="border border-stone-300 rounded-lg px-3 py-1.5 text-sm"
-                    />
-                    <input
-                      name="contractor"
-                      placeholder="Contractor"
-                      className="border border-stone-300 rounded-lg px-3 py-1.5 text-sm"
-                    />
-                    <input
-                      name="notes"
-                      placeholder="Notes"
-                      className="border border-stone-300 rounded-lg px-3 py-1.5 text-sm"
-                    />
+                  <div className="grid sm:grid-cols-3 gap-3 mb-3">
+                    <Input name="cost" type="number" placeholder="Cost (€)" />
+                    <Input name="contractor" placeholder="Contractor" />
+                    <Input name="notes" placeholder="Notes" />
                   </div>
-                  <Button type="submit" variant="secondary" className="text-xs py-1.5">
+                  <Button type="submit" variant="secondary" size="sm">
                     Mark complete
                   </Button>
                 </form>
@@ -134,6 +110,6 @@ export default async function TasksPage({
           })}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

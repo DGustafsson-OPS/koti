@@ -26,7 +26,7 @@ export function CreateRoomForm({ propertyId }: { propertyId: string }) {
         });
         setOpen(false);
       }}
-      className="mt-2 p-4 border border-stone-200 rounded-xl space-y-3 bg-stone-50"
+      className="mt-2 p-5 border border-stone-200/80 rounded-2xl space-y-4 bg-canvas-subtle/50"
     >
       <Input label="Room name *" name="name" required placeholder="Living Room" />
       <Input label="Floor" name="floor" placeholder="Ground, 1st, Basement" />

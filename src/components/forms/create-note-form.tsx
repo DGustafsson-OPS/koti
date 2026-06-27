@@ -24,7 +24,7 @@ export function CreateNoteForm({ roomId }: { roomId: string }) {
         });
         setOpen(false);
       }}
-      className="p-4 border border-stone-200 rounded-xl space-y-3 bg-stone-50"
+      className="p-5 border border-stone-200/80 rounded-2xl space-y-4 bg-canvas-subtle/50"
     >
       <Textarea label="Note" name="content" required placeholder="Oak parquet — use Bona cleaner only..." />
       <div className="flex gap-2">

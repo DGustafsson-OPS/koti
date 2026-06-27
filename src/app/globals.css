@@ -1,15 +1,35 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-50: #f0fdf4;
-  --color-brand-100: #dcfce7;
-  --color-brand-500: #22c55e;
-  --color-brand-600: #16a34a;
-  --color-brand-700: #15803d;
-  --color-brand-800: #166534;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-brand-50: #f0f7f4;
+  --color-brand-100: #dceee6;
+  --color-brand-200: #b8ddd0;
+  --color-brand-300: #8bc4b0;
+  --color-brand-400: #5fa68f;
+  --color-brand-500: #3d8b72;
+  --color-brand-600: #2f715c;
+  --color-brand-700: #275a4a;
+  --color-brand-800: #22493d;
+  --color-brand-900: #1d3c34;
+  --color-brand-950: #0f221d;
+  --color-surface: #ffffff;
+  --color-canvas: #f6f4f0;
+  --color-canvas-subtle: #efece6;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
 }
 
 body {
-  @apply bg-stone-100 text-stone-900 antialiased;
+  @apply bg-canvas text-stone-900 antialiased;
+}
+
+::selection {
+  @apply bg-brand-200 text-brand-950;
+}
+
+.app-canvas {
+  background-color: var(--color-canvas);
+  background-image:
+    radial-gradient(circle at 20% 0%, rgb(47 113 92 / 0.06), transparent 42%),
+    radial-gradient(circle at 80% 100%, rgb(47 113 92 / 0.04), transparent 38%);
 }

@@ -8,7 +8,15 @@ import {
   getTasks,
   getInventoryValue,
 } from "@/lib/queries";
-import { PageHeader, Card, Section, Badge, StatCard } from "@/components/ui";
+import {
+  PageContainer,
+  PageHeader,
+  Card,
+  Section,
+  Badge,
+  StatCard,
+  Callout,
+} from "@/components/ui";
 import { formatCurrency, CATEGORY_LABELS } from "@/lib/utils";
 import { CreateRoomForm } from "@/components/forms/create-room-form";
 import { CreateAssetForm } from "@/components/forms/create-asset-form";
@@ -29,98 +37,92 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
   ]);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
+    <PageContainer>
       <PageHeader
         title={property.name}
         subtitle={property.address ?? undefined}
-        action={
-          <Link href="/properties" className="text-sm text-stone-500 hover:text-stone-700">
-            ← All properties
-          </Link>
-        }
+        back={{ href: "/properties", label: "All properties" }}
       />
 
-      {property.notes && (
-        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-          {property.notes}
-        </div>
-      )}
+      {property.notes && <Callout variant="warning">{property.notes}</Callout>}
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
         <StatCard label="Rooms" value={rooms.length} />
         <StatCard label="Assets" value={assets.length} />
         <StatCard label="Inventory value" value={formatCurrency(inventoryValue)} />
       </div>
 
-      <Section title="Rooms">
-        <div className="grid md:grid-cols-3 gap-3 mb-4">
-          {rooms.map((room) => (
-            <Card key={room.id} href={`/rooms/${room.id}`}>
-              <p className="font-medium">{room.name}</p>
-              {room.floor && <p className="text-xs text-stone-400 mt-1">{room.floor} floor</p>}
-            </Card>
-          ))}
-        </div>
-        <CreateRoomForm propertyId={id} />
-      </Section>
-
-      <Section title="Materials">
-        {materials.length > 0 && (
-          <div className="space-y-2 mb-4">
-            {materials.map((m) => (
-              <Card key={m.id} className="p-3 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">{m.name}</p>
-                  <p className="text-xs text-stone-400">
-                    {[m.brand, m.colorCode, m.finish].filter(Boolean).join(" · ")}
-                  </p>
-                </div>
-                <Badge>{CATEGORY_LABELS[m.category] ?? m.category}</Badge>
+      <div className="grid lg:grid-cols-2 gap-10">
+        <Section title="Rooms">
+          <div className="grid sm:grid-cols-2 gap-3 mb-4">
+            {rooms.map((room) => (
+              <Card key={room.id} href={`/rooms/${room.id}`} padding="sm">
+                <p className="font-medium text-stone-900">{room.name}</p>
+                {room.floor && <p className="text-xs text-stone-500 mt-1">{room.floor} floor</p>}
               </Card>
             ))}
           </div>
-        )}
-        <CreateMaterialForm propertyId={id} rooms={rooms} />
-      </Section>
+          <CreateRoomForm propertyId={id} />
+        </Section>
 
-      <Section title="Assets">
-        {assets.length > 0 && (
-          <div className="space-y-2 mb-4">
-            {assets.map((a) => (
-              <Card key={a.id} href={`/assets/${a.id}`} className="p-3 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">{a.name}</p>
-                  <p className="text-xs text-stone-400">
-                    {[a.brand, a.model].filter(Boolean).join(" · ")}
-                  </p>
-                </div>
-                <Badge>{CATEGORY_LABELS[a.category] ?? a.category}</Badge>
-              </Card>
-            ))}
-          </div>
-        )}
-        <CreateAssetForm propertyId={id} rooms={rooms} />
-      </Section>
+        <Section title="Materials">
+          {materials.length > 0 && (
+            <div className="space-y-3 mb-4">
+              {materials.map((m) => (
+                <Card key={m.id} padding="sm" className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-sm text-stone-900">{m.name}</p>
+                    <p className="text-xs text-stone-500 mt-0.5">
+                      {[m.brand, m.colorCode, m.finish].filter(Boolean).join(" · ")}
+                    </p>
+                  </div>
+                  <Badge>{CATEGORY_LABELS[m.category] ?? m.category}</Badge>
+                </Card>
+              ))}
+            </div>
+          )}
+          <CreateMaterialForm propertyId={id} rooms={rooms} />
+        </Section>
 
-      <Section
-        title="Pending tasks"
-        action={
-          <Link href={`/tasks?property=${id}`} className="text-xs text-brand-600 hover:underline">
-            View all
-          </Link>
-        }
-      >
-        {pendingTasks.length > 0 && (
-          <div className="space-y-2 mb-4">
-            {pendingTasks.slice(0, 5).map((t) => (
-              <Card key={t.id} className="p-3">
-                <p className="font-medium text-sm">{t.title}</p>
-              </Card>
-            ))}
-          </div>
-        )}
-        <CreateTaskForm propertyId={id} rooms={rooms} assets={assets} />
-      </Section>
-    </div>
+        <Section title="Assets">
+          {assets.length > 0 && (
+            <div className="space-y-3 mb-4">
+              {assets.map((a) => (
+                <Card key={a.id} href={`/assets/${a.id}`} padding="sm" className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-sm text-stone-900">{a.name}</p>
+                    <p className="text-xs text-stone-500 mt-0.5">
+                      {[a.brand, a.model].filter(Boolean).join(" · ")}
+                    </p>
+                  </div>
+                  <Badge>{CATEGORY_LABELS[a.category] ?? a.category}</Badge>
+                </Card>
+              ))}
+            </div>
+          )}
+          <CreateAssetForm propertyId={id} rooms={rooms} />
+        </Section>
+
+        <Section
+          title="Pending tasks"
+          action={
+            <Link href={`/tasks?property=${id}`} className="text-xs text-brand-700 hover:underline font-medium">
+              View all →
+            </Link>
+          }
+        >
+          {pendingTasks.length > 0 && (
+            <div className="space-y-3 mb-4">
+              {pendingTasks.slice(0, 5).map((t) => (
+                <Card key={t.id} padding="sm">
+                  <p className="font-medium text-sm text-stone-900">{t.title}</p>
+                </Card>
+              ))}
+            </div>
+          )}
+          <CreateTaskForm propertyId={id} rooms={rooms} assets={assets} />
+        </Section>
+      </div>
+    </PageContainer>
   );
 }

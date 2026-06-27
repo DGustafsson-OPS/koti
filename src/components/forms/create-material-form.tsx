@@ -39,7 +39,7 @@ export function CreateMaterialForm({
         });
         setOpen(false);
       }}
-      className="mt-2 p-4 border border-stone-200 rounded-xl space-y-3 bg-stone-50"
+      className="mt-2 p-5 border border-stone-200/80 rounded-2xl space-y-4 bg-canvas-subtle/50"
     >
       <Input label="Name *" name="name" required placeholder="Symphony F497" />
       <Select label="Category" name="category" defaultValue="paint">

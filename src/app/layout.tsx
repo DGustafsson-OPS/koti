@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { DM_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
-import { Nav } from "@/components/nav";
+import { AppShell } from "@/components/app-shell";
 
-const inter = Inter({ subsets: ["latin"] });
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+});
 
 export const metadata: Metadata = {
   title: "Koti — Home Memory",
@@ -14,12 +22,9 @@ export const dynamic = "force-dynamic";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <div className="min-h-screen flex flex-col">
-          <Nav />
-          <main className="flex-1">{children}</main>
-        </div>
+    <html lang="en" className={`${dmSans.variable} ${fraunces.variable}`}>
+      <body className="font-sans">
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
