@@ -1,0 +1,20 @@
+[Unit]
+Description=Koti Next.js App
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=koti-ssh
+Group=tervakuja-koti
+WorkingDirectory=/home/tervakuja-koti/htdocs/koti.tervakuja.fi/release
+EnvironmentFile=/home/tervakuja-koti/htdocs/koti.tervakuja.fi/.env
+Environment=PORT=8088
+Environment=HOSTNAME=127.0.0.1
+Environment=NODE_ENV=production
+ExecStart=/home/koti-ssh/.nvm/versions/node/v22.23.1/bin/node server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,7 +1,12 @@
-import { drizzle } from "drizzle-orm/libsql";
-import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2/promise";
 import * as schema from "./schema";
 
-const client = createClient({ url: "file:koti.db" });
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is not set");
+}
 
-export const db = drizzle(client, { schema });
+const pool = mysql.createPool(databaseUrl);
+
+export const db = drizzle(pool, { schema, mode: "default" });

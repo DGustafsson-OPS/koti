@@ -1,87 +1,96 @@
-import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import {
+  mysqlTable,
+  varchar,
+  text,
+  int,
+  double,
+  index,
+} from "drizzle-orm/mysql-core";
 
-export const properties = sqliteTable("properties", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
+export const properties = mysqlTable("properties", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
   address: text("address"),
-  propertyType: text("property_type"),
-  yearBuilt: integer("year_built"),
-  sizeSqm: real("size_sqm"),
+  propertyType: varchar("property_type", { length: 64 }),
+  yearBuilt: int("year_built"),
+  sizeSqm: double("size_sqm"),
   notes: text("notes"),
-  createdAt: integer("created_at").notNull(),
-  updatedAt: integer("updated_at").notNull(),
+  createdAt: int("created_at").notNull(),
+  updatedAt: int("updated_at").notNull(),
 });
 
-export const rooms = sqliteTable(
+export const rooms = mysqlTable(
   "rooms",
   {
-    id: text("id").primaryKey(),
-    propertyId: text("property_id")
+    id: varchar("id", { length: 36 }).primaryKey(),
+    propertyId: varchar("property_id", { length: 36 })
       .notNull()
       .references(() => properties.id, { onDelete: "cascade" }),
-    name: text("name").notNull(),
-    floor: text("floor"),
+    name: varchar("name", { length: 255 }).notNull(),
+    floor: varchar("floor", { length: 64 }),
     notes: text("notes"),
-    createdAt: integer("created_at").notNull(),
-    updatedAt: integer("updated_at").notNull(),
+    createdAt: int("created_at").notNull(),
+    updatedAt: int("updated_at").notNull(),
   },
   (t) => [index("idx_rooms_property").on(t.propertyId)]
 );
 
-export const materials = sqliteTable(
+export const materials = mysqlTable(
   "materials",
   {
-    id: text("id").primaryKey(),
-    propertyId: text("property_id")
+    id: varchar("id", { length: 36 }).primaryKey(),
+    propertyId: varchar("property_id", { length: 36 })
       .notNull()
       .references(() => properties.id, { onDelete: "cascade" }),
-    name: text("name").notNull(),
-    category: text("category").notNull().default("other"),
-    brand: text("brand"),
-    colorCode: text("color_code"),
-    sku: text("sku"),
-    finish: text("finish"),
-    supplier: text("supplier"),
+    name: varchar("name", { length: 255 }).notNull(),
+    category: varchar("category", { length: 64 }).notNull().default("other"),
+    brand: varchar("brand", { length: 255 }),
+    colorCode: varchar("color_code", { length: 64 }),
+    sku: varchar("sku", { length: 128 }),
+    finish: varchar("finish", { length: 64 }),
+    supplier: varchar("supplier", { length: 255 }),
     leftoverLocation: text("leftover_location"),
     notes: text("notes"),
-    createdAt: integer("created_at").notNull(),
-    updatedAt: integer("updated_at").notNull(),
+    createdAt: int("created_at").notNull(),
+    updatedAt: int("updated_at").notNull(),
   },
   (t) => [index("idx_materials_property").on(t.propertyId)]
 );
 
-export const roomMaterials = sqliteTable("room_materials", {
-  id: text("id").primaryKey(),
-  roomId: text("room_id")
+export const roomMaterials = mysqlTable("room_materials", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  roomId: varchar("room_id", { length: 36 })
     .notNull()
     .references(() => rooms.id, { onDelete: "cascade" }),
-  materialId: text("material_id")
+  materialId: varchar("material_id", { length: 36 })
     .notNull()
     .references(() => materials.id, { onDelete: "cascade" }),
-  surface: text("surface"),
+  surface: varchar("surface", { length: 128 }),
   notes: text("notes"),
-  appliedAt: integer("applied_at"),
+  appliedAt: int("applied_at"),
 });
 
-export const assets = sqliteTable(
+export const assets = mysqlTable(
   "assets",
   {
-    id: text("id").primaryKey(),
-    propertyId: text("property_id")
+    id: varchar("id", { length: 36 }).primaryKey(),
+    propertyId: varchar("property_id", { length: 36 })
       .notNull()
       .references(() => properties.id, { onDelete: "cascade" }),
-    roomId: text("room_id").references(() => rooms.id, { onDelete: "set null" }),
-    name: text("name").notNull(),
-    category: text("category").notNull().default("other"),
-    brand: text("brand"),
-    model: text("model"),
-    serialNumber: text("serial_number"),
-    purchaseDate: integer("purchase_date"),
-    purchasePrice: real("purchase_price"),
-    replacementValue: real("replacement_value"),
+    roomId: varchar("room_id", { length: 36 }).references(() => rooms.id, {
+      onDelete: "set null",
+    }),
+    name: varchar("name", { length: 255 }).notNull(),
+    category: varchar("category", { length: 64 }).notNull().default("other"),
+    brand: varchar("brand", { length: 255 }),
+    model: varchar("model", { length: 255 }),
+    serialNumber: varchar("serial_number", { length: 128 }),
+    purchaseDate: int("purchase_date"),
+    purchasePrice: double("purchase_price"),
+    replacementValue: double("replacement_value"),
     notes: text("notes"),
-    createdAt: integer("created_at").notNull(),
-    updatedAt: integer("updated_at").notNull(),
+    createdAt: int("created_at").notNull(),
+    updatedAt: int("updated_at").notNull(),
   },
   (t) => [
     index("idx_assets_property").on(t.propertyId),
@@ -89,43 +98,47 @@ export const assets = sqliteTable(
   ]
 );
 
-export const warranties = sqliteTable(
+export const warranties = mysqlTable(
   "warranties",
   {
-    id: text("id").primaryKey(),
-    assetId: text("asset_id")
+    id: varchar("id", { length: 36 }).primaryKey(),
+    assetId: varchar("asset_id", { length: 36 })
       .notNull()
       .references(() => assets.id, { onDelete: "cascade" }),
-    provider: text("provider"),
-    expiresAt: integer("expires_at").notNull(),
+    provider: varchar("provider", { length: 255 }),
+    expiresAt: int("expires_at").notNull(),
     terms: text("terms"),
     notes: text("notes"),
-    createdAt: integer("created_at").notNull(),
+    createdAt: int("created_at").notNull(),
   },
   (t) => [index("idx_warranties_expires").on(t.expiresAt)]
 );
 
-export const tasks = sqliteTable(
+export const tasks = mysqlTable(
   "tasks",
   {
-    id: text("id").primaryKey(),
-    propertyId: text("property_id")
+    id: varchar("id", { length: 36 }).primaryKey(),
+    propertyId: varchar("property_id", { length: 36 })
       .notNull()
       .references(() => properties.id, { onDelete: "cascade" }),
-    roomId: text("room_id").references(() => rooms.id, { onDelete: "set null" }),
-    assetId: text("asset_id").references(() => assets.id, { onDelete: "set null" }),
-    title: text("title").notNull(),
+    roomId: varchar("room_id", { length: 36 }).references(() => rooms.id, {
+      onDelete: "set null",
+    }),
+    assetId: varchar("asset_id", { length: 36 }).references(() => assets.id, {
+      onDelete: "set null",
+    }),
+    title: varchar("title", { length: 255 }).notNull(),
     description: text("description"),
-    priority: text("priority").notNull().default("normal"),
-    skillLevel: text("skill_level").notNull().default("diy"),
-    recurrence: text("recurrence").notNull().default("none"),
-    recurrenceIntervalDays: integer("recurrence_interval_days"),
-    dueDate: integer("due_date"),
-    estimatedCost: real("estimated_cost"),
-    estimatedMinutes: integer("estimated_minutes"),
-    status: text("status").notNull().default("pending"),
-    createdAt: integer("created_at").notNull(),
-    updatedAt: integer("updated_at").notNull(),
+    priority: varchar("priority", { length: 32 }).notNull().default("normal"),
+    skillLevel: varchar("skill_level", { length: 32 }).notNull().default("diy"),
+    recurrence: varchar("recurrence", { length: 32 }).notNull().default("none"),
+    recurrenceIntervalDays: int("recurrence_interval_days"),
+    dueDate: int("due_date"),
+    estimatedCost: double("estimated_cost"),
+    estimatedMinutes: int("estimated_minutes"),
+    status: varchar("status", { length: 32 }).notNull().default("pending"),
+    createdAt: int("created_at").notNull(),
+    updatedAt: int("updated_at").notNull(),
   },
   (t) => [
     index("idx_tasks_property").on(t.propertyId),
@@ -133,23 +146,29 @@ export const tasks = sqliteTable(
   ]
 );
 
-export const maintenanceEvents = sqliteTable(
+export const maintenanceEvents = mysqlTable(
   "maintenance_events",
   {
-    id: text("id").primaryKey(),
-    propertyId: text("property_id")
+    id: varchar("id", { length: 36 }).primaryKey(),
+    propertyId: varchar("property_id", { length: 36 })
       .notNull()
       .references(() => properties.id, { onDelete: "cascade" }),
-    taskId: text("task_id").references(() => tasks.id, { onDelete: "set null" }),
-    roomId: text("room_id").references(() => rooms.id, { onDelete: "set null" }),
-    assetId: text("asset_id").references(() => assets.id, { onDelete: "set null" }),
-    title: text("title").notNull(),
+    taskId: varchar("task_id", { length: 36 }).references(() => tasks.id, {
+      onDelete: "set null",
+    }),
+    roomId: varchar("room_id", { length: 36 }).references(() => rooms.id, {
+      onDelete: "set null",
+    }),
+    assetId: varchar("asset_id", { length: 36 }).references(() => assets.id, {
+      onDelete: "set null",
+    }),
+    title: varchar("title", { length: 255 }).notNull(),
     description: text("description"),
-    completedAt: integer("completed_at").notNull(),
-    cost: real("cost"),
-    contractor: text("contractor"),
+    completedAt: int("completed_at").notNull(),
+    cost: double("cost"),
+    contractor: varchar("contractor", { length: 255 }),
     notes: text("notes"),
-    createdAt: integer("created_at").notNull(),
+    createdAt: int("created_at").notNull(),
   },
   (t) => [
     index("idx_events_property").on(t.propertyId),
@@ -157,29 +176,29 @@ export const maintenanceEvents = sqliteTable(
   ]
 );
 
-export const notes = sqliteTable("notes", {
-  id: text("id").primaryKey(),
-  roomId: text("room_id")
+export const notes = mysqlTable("notes", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  roomId: varchar("room_id", { length: 36 })
     .notNull()
     .references(() => rooms.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
-  createdAt: integer("created_at").notNull(),
-  updatedAt: integer("updated_at").notNull(),
+  createdAt: int("created_at").notNull(),
+  updatedAt: int("updated_at").notNull(),
 });
 
-export const entityLinks = sqliteTable(
+export const entityLinks = mysqlTable(
   "entity_links",
   {
-    id: text("id").primaryKey(),
-    propertyId: text("property_id")
+    id: varchar("id", { length: 36 }).primaryKey(),
+    propertyId: varchar("property_id", { length: 36 })
       .notNull()
       .references(() => properties.id, { onDelete: "cascade" }),
-    sourceType: text("source_type").notNull(),
-    sourceId: text("source_id").notNull(),
-    targetType: text("target_type").notNull(),
-    targetId: text("target_id").notNull(),
-    relationship: text("relationship").notNull(),
-    createdAt: integer("created_at").notNull(),
+    sourceType: varchar("source_type", { length: 64 }).notNull(),
+    sourceId: varchar("source_id", { length: 36 }).notNull(),
+    targetType: varchar("target_type", { length: 64 }).notNull(),
+    targetId: varchar("target_id", { length: 36 }).notNull(),
+    relationship: varchar("relationship", { length: 64 }).notNull(),
+    createdAt: int("created_at").notNull(),
   },
   (t) => [
     index("idx_entity_links_source").on(t.sourceType, t.sourceId),

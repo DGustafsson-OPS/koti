@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: "A permanent memory for your home",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
