@@ -2,15 +2,8 @@ import NextAuth from "next-auth";
 import Apple from "next-auth/providers/apple";
 import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "./auth.config";
-import { upsertCredentialsUser, upsertOAuthUser } from "@/lib/users";
+import { verifyCredentialsUser, upsertOAuthUser } from "@/lib/users";
 import { getAppleClientSecret } from "@/lib/apple-client-secret";
-
-function verifyCredentials(username: string, password: string) {
-  const expectedUser = process.env.AUTH_USERNAME ?? "admin";
-  const expectedPassword = process.env.AUTH_PASSWORD;
-  if (!expectedPassword) return false;
-  return username === expectedUser && password === expectedPassword;
-}
 
 const appleConfigured =
   process.env.AUTH_APPLE_ID &&
@@ -40,9 +33,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         const username = String(credentials?.username ?? "").trim();
         const password = String(credentials?.password ?? "");
-        if (!verifyCredentials(username, password)) return null;
+        const user = await verifyCredentialsUser(username, password);
+        if (!user) return null;
 
-        const user = await upsertCredentialsUser(username);
         return {
           id: user.id,
           name: user.name,

@@ -30,6 +30,7 @@ export const accounts = mysqlTable(
       .references(() => users.id, { onDelete: "cascade" }),
     provider: varchar("provider", { length: 64 }).notNull(),
     providerAccountId: varchar("provider_account_id", { length: 255 }).notNull(),
+    passwordHash: varchar("password_hash", { length: 255 }),
     createdAt: int("created_at").notNull(),
   },
   (t) => [index("idx_accounts_provider").on(t.provider, t.providerAccountId)]

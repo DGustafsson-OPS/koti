@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { users, accounts } from "@/db/schema";
-import { eq, and, asc, inArray } from "drizzle-orm";
+import { eq, and, asc, inArray, sql } from "drizzle-orm";
 import { now } from "@/lib/utils";
 import { v4 as uuid } from "uuid";
 import { revalidatePath } from "next/cache";
@@ -170,30 +170,100 @@ export async function upsertOAuthUser(data: {
   return user!;
 }
 
-export async function upsertCredentialsUser(username: string) {
-  const provider = "credentials";
-  const providerAccountId = username;
-  const email = `${username}@local.koti`;
+import { hashPassword, verifyPassword, validatePassword } from "@/lib/password";
 
-  const [existingAccount] = await db
-    .select({ user: users })
+const CREDENTIALS_PROVIDER = "credentials";
+
+function credentialsEmail(username: string) {
+  return `${username.trim().toLowerCase()}@local.koti`;
+}
+
+function envCredentialsMatch(username: string, password: string) {
+  const expectedUser = (process.env.AUTH_USERNAME ?? "admin").trim().toLowerCase();
+  const expectedPassword = process.env.AUTH_PASSWORD;
+  if (!expectedPassword) return false;
+  return username.trim().toLowerCase() === expectedUser && password === expectedPassword;
+}
+
+export async function getCredentialsAccountByUsername(username: string) {
+  const normalized = username.trim().toLowerCase();
+  const [row] = await db
+    .select({ account: accounts, user: users })
     .from(accounts)
     .innerJoin(users, eq(accounts.userId, users.id))
-    .where(and(eq(accounts.provider, provider), eq(accounts.providerAccountId, providerAccountId)));
+    .where(
+      and(
+        eq(accounts.provider, CREDENTIALS_PROVIDER),
+        sql`lower(${accounts.providerAccountId}) = ${normalized}`
+      )
+    );
+  return row ?? null;
+}
 
-  if (existingAccount) return existingAccount.user;
+export type UserAuthInfo = {
+  providers: string[];
+  username?: string;
+};
 
-  const ts = now();
+export async function getUserAuthMethods(userIds: string[]): Promise<Map<string, UserAuthInfo>> {
+  if (userIds.length === 0) return new Map<string, UserAuthInfo>();
+
+  const rows = await db
+    .select({ userId: accounts.userId, provider: accounts.provider, username: accounts.providerAccountId })
+    .from(accounts)
+    .where(inArray(accounts.userId, userIds));
+
+  const map = new Map<string, { providers: Set<string>; username?: string }>();
+  for (const row of rows) {
+    const entry = map.get(row.userId) ?? { providers: new Set<string>() };
+    entry.providers.add(row.provider);
+    if (row.provider === CREDENTIALS_PROVIDER) {
+      entry.username = row.username;
+    }
+    map.set(row.userId, entry);
+  }
+
+  return new Map(
+    userIds.map((id) => {
+      const entry = map.get(id);
+      return [
+        id,
+        {
+          providers: entry ? [...entry.providers] : [],
+          username: entry?.username,
+        },
+      ];
+    })
+  );
+}
+
+export async function createCredentialsUser(data: {
+  username: string;
+  password: string;
+  name?: string;
+  role?: "admin" | "member";
+}) {
+  const username = data.username.trim();
+  const normalized = username.toLowerCase();
+  if (normalized.length < 2) throw new Error("Username too short");
+  validatePassword(data.password);
+
+  if (await getCredentialsAccountByUsername(normalized)) {
+    throw new Error("Username already taken");
+  }
+
+  const userCount = await db.select({ id: users.id }).from(users);
+  const role = data.role ?? (userCount.length === 0 ? "admin" : "member");
+  const hash = await hashPassword(data.password);
   const userId = uuid();
-  const userCount = await db.select().from(users);
-  const isBootstrapAdmin = userCount.length === 0 || username === (process.env.AUTH_USERNAME ?? "admin");
+  const ts = now();
 
   await db.insert(users).values({
     id: userId,
-    email,
-    name: username,
+    email: credentialsEmail(username),
+    name: data.name?.trim() || username,
     image: null,
-    role: isBootstrapAdmin ? "admin" : "member",
+    role,
     createdAt: ts,
     updatedAt: ts,
   });
@@ -201,13 +271,83 @@ export async function upsertCredentialsUser(username: string) {
   await db.insert(accounts).values({
     id: uuid(),
     userId,
-    provider,
-    providerAccountId,
+    provider: CREDENTIALS_PROVIDER,
+    providerAccountId: normalized,
+    passwordHash: hash,
     createdAt: ts,
   });
 
+  revalidatePath("/settings");
   const [user] = await db.select().from(users).where(eq(users.id, userId));
   return user!;
+}
+
+async function setAccountPasswordHash(accountId: string, password: string, normalizedUsername?: string) {
+  validatePassword(password);
+  const hash = await hashPassword(password);
+  await db
+    .update(accounts)
+    .set({
+      passwordHash: hash,
+      ...(normalizedUsername ? { providerAccountId: normalizedUsername } : {}),
+    })
+    .where(eq(accounts.id, accountId));
+}
+
+export async function verifyCredentialsUser(username: string, password: string) {
+  const trimmed = username.trim();
+  const normalized = trimmed.toLowerCase();
+  if (!trimmed || !password) return null;
+
+  const existing = await getCredentialsAccountByUsername(normalized);
+
+  if (existing?.account.passwordHash) {
+    const valid = await verifyPassword(password, existing.account.passwordHash);
+    return valid ? existing.user : null;
+  }
+
+  if (existing && envCredentialsMatch(trimmed, password)) {
+    await setAccountPasswordHash(existing.account.id, password, normalized);
+    return existing.user;
+  }
+
+  if (!existing && envCredentialsMatch(trimmed, password)) {
+    const userCount = await db.select({ id: users.id }).from(users);
+    const envUser = (process.env.AUTH_USERNAME ?? "admin").trim().toLowerCase();
+    const role =
+      userCount.length === 0 || normalized === envUser ? "admin" : "member";
+    return createCredentialsUser({ username: trimmed, password, role });
+  }
+
+  return null;
+}
+
+export async function setCredentialsPassword(userId: string, password: string) {
+  validatePassword(password);
+  const [account] = await db
+    .select()
+    .from(accounts)
+    .where(and(eq(accounts.userId, userId), eq(accounts.provider, CREDENTIALS_PROVIDER)));
+
+  if (!account) throw new Error("User has no password login");
+
+  await setAccountPasswordHash(account.id, password);
+  revalidatePath("/settings");
+}
+
+export async function deleteUser(userId: string, actorUserId: string) {
+  if (userId === actorUserId) throw new Error("Cannot delete yourself");
+
+  const target = await getUserById(userId);
+  if (!target) throw new Error("User not found");
+
+  if (target.role === "admin") {
+    const admins = await db.select({ id: users.id }).from(users).where(eq(users.role, "admin"));
+    if (admins.length <= 1) throw new Error("Cannot delete the last admin");
+  }
+
+  await db.delete(users).where(eq(users.id, userId));
+  revalidatePath("/settings");
 }
 
 export async function updateUserRole(userId: string, role: "admin" | "member") {
