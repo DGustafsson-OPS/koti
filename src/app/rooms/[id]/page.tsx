@@ -132,7 +132,7 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
           ) : (
             <div className="space-y-3">
               {pendingTasks.map((t) => (
-                <Card key={t.id} padding="sm" className="flex justify-between items-start gap-3">
+                <Card key={t.id} href={`/tasks/${t.id}/edit`} padding="sm" className="flex justify-between items-start gap-3">
                   <div>
                     <p className="font-medium text-stone-900">{t.title}</p>
                     <p className="text-xs text-stone-500 mt-0.5">{formatDate(t.dueDate, locale)}</p>
@@ -154,7 +154,7 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
           ) : (
             <div className="space-y-3">
               {history.map((e) => (
-                <Card key={e.id} padding="sm">
+                <Card key={e.id} href={`/events/${e.id}/edit`} padding="sm">
                   <p className="font-medium text-stone-900">{e.title}</p>
                   <p className="text-xs text-stone-500 mt-0.5">
                     {formatDate(e.completedAt, locale)}

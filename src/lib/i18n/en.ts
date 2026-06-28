@@ -397,5 +397,22 @@ export const en = {
     property: "Property",
     note: "Note",
     event: "Event",
+    file: "File",
+  },
+  import: {
+    title: "Import & export",
+    subtitle: "Bulk add assets and tasks from CSV, or download your data",
+    exportAssets: "Download assets CSV",
+    exportTasks: "Download tasks CSV",
+    assetsTitle: "Import assets",
+    assetsHelp: "Upload a CSV with a header row. Room names must match existing rooms on this property.",
+    assetsColumns:
+      "name, category, brand, model, room, serial_number, purchase_date, purchase_price, notes",
+    tasksTitle: "Import tasks",
+    tasksHelp: "Upload a CSV with a header row. Priority: low, normal, or urgent.",
+    tasksColumns: "title, description, priority, room, due_date",
+    chooseFile: "Choose CSV file",
+    importedOne: "Imported {n} row.",
+    importedMany: "Imported {n} rows.",
   },
 } as const;

@@ -20,7 +20,7 @@ import {
 import { getLocale } from "@/lib/i18n/server";
 import { queryUrl } from "@/lib/query-url";
 
-const SEARCH_TYPE_KEYS = ["property", "room", "material", "asset", "task", "event"] as const;
+const SEARCH_TYPE_KEYS = ["property", "room", "material", "asset", "task", "event", "file"] as const;
 
 export default async function SearchPage({
   searchParams,

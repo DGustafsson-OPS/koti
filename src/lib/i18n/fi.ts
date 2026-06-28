@@ -396,5 +396,22 @@ export const fi = {
     property: "Kiinteistö",
     note: "Muistiinpano",
     event: "Tapahtuma",
+    file: "Tiedosto",
+  },
+  import: {
+    title: "Tuonti ja vienti",
+    subtitle: "Lisää omistuksia ja tehtäviä CSV-tiedostosta tai lataa data",
+    exportAssets: "Lataa omistukset CSV",
+    exportTasks: "Lataa tehtävät CSV",
+    assetsTitle: "Tuo omistuksia",
+    assetsHelp: "Lataa CSV otsikkorivillä. Huoneiden nimet on oltava olemassa tällä kiinteistöllä.",
+    assetsColumns:
+      "name, category, brand, model, room, serial_number, purchase_date, purchase_price, notes",
+    tasksTitle: "Tuo tehtäviä",
+    tasksHelp: "Lataa CSV otsikkorivillä. Prioriteetti: low, normal tai urgent.",
+    tasksColumns: "title, description, priority, room, due_date",
+    chooseFile: "Valitse CSV-tiedosto",
+    importedOne: "Tuotu {n} rivi.",
+    importedMany: "Tuotu {n} riviä.",
   },
 } as const;

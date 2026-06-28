@@ -1166,6 +1166,27 @@ export async function searchAll(
     }
   }
 
+  if (include("file")) {
+    const fileRows = await db
+      .select()
+      .from(attachments)
+      .where(
+        propertyId
+          ? and(eq(attachments.propertyId, propertyId), like(attachments.filename, q))
+          : like(attachments.filename, q)
+      );
+    for (const file of fileRows) {
+      results.push({
+        type: "file",
+        id: file.id,
+        title: file.filename,
+        subtitle: file.entityType,
+        propertyId: file.propertyId,
+        href: `/api/files/${file.id}`,
+      });
+    }
+  }
+
   return results;
 }
 
