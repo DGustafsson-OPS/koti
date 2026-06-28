@@ -5,7 +5,6 @@ import {
   CheckSquare,
   Home,
   Shield,
-  Wallet,
 } from "lucide-react";
 import {
   getProperties,
@@ -13,7 +12,6 @@ import {
   getUpcomingTasks,
   getExpiringWarranties,
   getRecentHistory,
-  getInventoryValue,
 } from "@/lib/queries";
 import {
   PageContainer,
@@ -47,7 +45,6 @@ export default async function DashboardPage() {
     getRecentHistory(property?.id, 5),
   ]);
 
-  const inventoryValue = property ? await getInventoryValue(property.id) : 0;
   const tasks = [...overdue, ...upcoming].slice(0, 6);
   const now = Math.floor(Date.now() / 1000);
 
@@ -101,7 +98,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
         <StatCard
           label={dict.dashboard.overdueTasks}
           value={overdue.length}
@@ -122,11 +119,6 @@ export default async function DashboardPage() {
           sub={dict.dashboard.within60Days}
           icon={<Shield className="w-4 h-4" />}
           href={expiring[0] ? `/assets/${expiring[0].asset.id}` : `/properties/${property.id}`}
-        />
-        <StatCard
-          label={dict.dashboard.inventoryValue}
-          value={formatCurrency(inventoryValue, locale)}
-          icon={<Wallet className="w-4 h-4" />}
         />
       </div>
 
