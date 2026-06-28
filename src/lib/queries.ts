@@ -14,6 +14,7 @@ import {
   notes,
   entityLinks,
   attachments,
+  contractors,
 } from "@/db/schema";
 import { eq, desc, asc, and, lte, gte, lt, or, like, sql, isNull } from "drizzle-orm";
 import { now, nextDueDate } from "@/lib/utils";
@@ -775,6 +776,7 @@ export async function completeTask(data: {
   taskId: string;
   cost?: number;
   contractor?: string;
+  contractorId?: string;
   notes?: string;
   taxDeductible?: boolean;
 }) {
@@ -783,6 +785,11 @@ export async function completeTask(data: {
 
   const ts = now();
   const eventId = uuid();
+  const contractorFields = await resolveContractorFields(
+    task.propertyId,
+    data.contractorId,
+    data.contractor
+  );
 
   await db.insert(maintenanceEvents).values({
     id: eventId,
@@ -794,7 +801,8 @@ export async function completeTask(data: {
     description: task.description,
     completedAt: ts,
     cost: data.cost ?? null,
-    contractor: data.contractor ?? null,
+    contractor: contractorFields.contractor,
+    contractorId: contractorFields.contractorId,
     taxDeductible: data.taxDeductible ?? false,
     notes: data.notes ?? null,
     createdAt: ts,
@@ -826,6 +834,114 @@ export async function completeTask(data: {
   return eventId;
 }
 
+// ─── Contractors ──────────────────────────────────────────────────────────────
+
+export async function getContractors(propertyId: string) {
+  return db
+    .select()
+    .from(contractors)
+    .where(eq(contractors.propertyId, propertyId))
+    .orderBy(asc(contractors.name));
+}
+
+export async function getContractor(id: string) {
+  const [contractor] = await db.select().from(contractors).where(eq(contractors.id, id));
+  return contractor ?? null;
+}
+
+export async function createContractor(data: {
+  propertyId: string;
+  name: string;
+  specialty?: string;
+  phone?: string;
+  email?: string;
+  notes?: string;
+}) {
+  const id = uuid();
+  const ts = now();
+  await db.insert(contractors).values({
+    id,
+    propertyId: data.propertyId,
+    name: data.name.trim(),
+    specialty: data.specialty?.trim() || null,
+    phone: data.phone?.trim() || null,
+    email: data.email?.trim() || null,
+    notes: data.notes?.trim() || null,
+    createdAt: ts,
+    updatedAt: ts,
+  });
+  revalidatePath(`/properties/${data.propertyId}/contractors`);
+  revalidatePath(`/properties/${data.propertyId}`);
+  revalidatePath("/history");
+  return id;
+}
+
+export async function updateContractor(
+  id: string,
+  data: {
+    name: string;
+    specialty?: string;
+    phone?: string;
+    email?: string;
+    notes?: string;
+  }
+) {
+  const contractor = await getContractor(id);
+  if (!contractor) throw new Error("Contractor not found");
+
+  const ts = now();
+  const name = data.name.trim();
+  await db
+    .update(contractors)
+    .set({
+      name,
+      specialty: data.specialty?.trim() || null,
+      phone: data.phone?.trim() || null,
+      email: data.email?.trim() || null,
+      notes: data.notes?.trim() || null,
+      updatedAt: ts,
+    })
+    .where(eq(contractors.id, id));
+
+  await db
+    .update(maintenanceEvents)
+    .set({ contractor: name })
+    .where(eq(maintenanceEvents.contractorId, id));
+
+  revalidatePath(`/properties/${contractor.propertyId}/contractors`);
+  revalidatePath(`/properties/${contractor.propertyId}`);
+  revalidatePath("/history");
+}
+
+export async function deleteContractor(id: string) {
+  const contractor = await getContractor(id);
+  if (!contractor) throw new Error("Contractor not found");
+  await db.delete(contractors).where(eq(contractors.id, id));
+  revalidatePath(`/properties/${contractor.propertyId}/contractors`);
+  revalidatePath(`/properties/${contractor.propertyId}`);
+  revalidatePath("/history");
+}
+
+async function resolveContractorFields(
+  propertyId: string,
+  contractorId?: string,
+  contractorText?: string
+) {
+  if (contractorId) {
+    const contractor = await getContractor(contractorId);
+    if (contractor && contractor.propertyId === propertyId) {
+      return { contractorId: contractor.id, contractor: contractor.name };
+    }
+  }
+
+  const text = contractorText?.trim();
+  if (text) {
+    return { contractorId: null, contractor: text };
+  }
+
+  return { contractorId: null, contractor: null };
+}
+
 export async function createMaintenanceEvent(data: {
   propertyId: string;
   title: string;
@@ -833,6 +949,7 @@ export async function createMaintenanceEvent(data: {
   completedAt: number;
   cost?: number;
   contractor?: string;
+  contractorId?: string;
   taxDeductible?: boolean;
   notes?: string;
   roomId?: string;
@@ -840,6 +957,11 @@ export async function createMaintenanceEvent(data: {
 }) {
   const id = uuid();
   const ts = now();
+  const contractorFields = await resolveContractorFields(
+    data.propertyId,
+    data.contractorId,
+    data.contractor
+  );
   await db.insert(maintenanceEvents).values({
     id,
     propertyId: data.propertyId,
@@ -850,7 +972,8 @@ export async function createMaintenanceEvent(data: {
     description: data.description ?? null,
     completedAt: data.completedAt,
     cost: data.cost ?? null,
-    contractor: data.contractor ?? null,
+    contractor: contractorFields.contractor,
+    contractorId: contractorFields.contractorId,
     taxDeductible: data.taxDeductible ?? false,
     notes: data.notes ?? null,
     createdAt: ts,
@@ -875,6 +998,7 @@ export async function updateMaintenanceEvent(
     completedAt: number;
     cost?: number;
     contractor?: string;
+    contractorId?: string;
     taxDeductible?: boolean;
     notes?: string;
     roomId?: string;
@@ -884,6 +1008,12 @@ export async function updateMaintenanceEvent(
   const event = await getMaintenanceEvent(id);
   if (!event) throw new Error("Event not found");
 
+  const contractorFields = await resolveContractorFields(
+    event.propertyId,
+    data.contractorId,
+    data.contractor
+  );
+
   await db
     .update(maintenanceEvents)
     .set({
@@ -891,7 +1021,8 @@ export async function updateMaintenanceEvent(
       description: data.description ?? null,
       completedAt: data.completedAt,
       cost: data.cost ?? null,
-      contractor: data.contractor ?? null,
+      contractor: contractorFields.contractor,
+      contractorId: contractorFields.contractorId,
       taxDeductible: data.taxDeductible ?? false,
       notes: data.notes ?? null,
       roomId: data.roomId ?? null,
@@ -934,12 +1065,14 @@ export async function getRecentHistory(propertyId?: string, limit = 10) {
 
 export async function getAllHistory(
   propertyId?: string,
-  filters?: { roomId?: string; contractor?: string; year?: number }
+  filters?: { roomId?: string; contractor?: string; contractorId?: string; year?: number }
 ) {
   const conditions = [];
   if (propertyId) conditions.push(eq(maintenanceEvents.propertyId, propertyId));
   if (filters?.roomId) conditions.push(eq(maintenanceEvents.roomId, filters.roomId));
-  if (filters?.contractor) {
+  if (filters?.contractorId) {
+    conditions.push(eq(maintenanceEvents.contractorId, filters.contractorId));
+  } else if (filters?.contractor) {
     conditions.push(like(maintenanceEvents.contractor, `%${filters.contractor}%`));
   }
   if (filters?.year) {

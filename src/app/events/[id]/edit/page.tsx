@@ -5,16 +5,19 @@ import {
   getRooms,
   getAssets,
   getAttachments,
+  getContractors,
   updateMaintenanceEvent,
   deleteMaintenanceEvent,
 } from "@/lib/queries";
 import { PageContainer, PageHeader, Input, Select, Textarea, Button, Panel, Section, FormCheckbox } from "@/components/ui";
 import { ConfirmDeleteForm } from "@/components/forms/confirm-delete-form";
 import { AttachmentsSection } from "@/components/attachments-section";
+import { ContractorField } from "@/components/forms/contractor-field";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { dateInputToTimestamp, timestampToDateInput } from "@/lib/date-input";
 import { parseTaxDeductible } from "@/lib/maintenance-costs";
+import { parseContractorForm } from "@/lib/contractors";
 
 export default async function EditEventPage({ params }: { params: Promise<{ id: string }> }) {
   const locale = await getLocale();
@@ -23,21 +26,23 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
   const event = await getMaintenanceEvent(id);
   if (!event) notFound();
 
-  const [property, rooms, assets, attachments] = await Promise.all([
+  const [property, rooms, assets, attachments, propertyContractors] = await Promise.all([
     getProperty(event.propertyId),
     getRooms(event.propertyId),
     getAssets(event.propertyId),
     getAttachments("event", id),
+    getContractors(event.propertyId),
   ]);
 
   async function handleUpdate(formData: FormData) {
     "use server";
+    const contractorInput = parseContractorForm(formData);
     await updateMaintenanceEvent(id, {
       title: formData.get("title") as string,
       description: (formData.get("description") as string) || undefined,
       completedAt: dateInputToTimestamp(formData.get("completedAt") as string),
       cost: formData.get("cost") ? Number(formData.get("cost")) : undefined,
-      contractor: (formData.get("contractor") as string) || undefined,
+      ...contractorInput,
       taxDeductible: parseTaxDeductible(formData),
       notes: (formData.get("notes") as string) || undefined,
       roomId: (formData.get("roomId") as string) || undefined,
@@ -78,7 +83,11 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
               defaultValue={event.cost ?? undefined}
             />
           </div>
-          <Input label={dict.forms.contractor} name="contractor" defaultValue={event.contractor ?? ""} />
+          <ContractorField
+            contractors={propertyContractors}
+            defaultContractorId={event.contractorId}
+            defaultContractorName={event.contractor}
+          />
           <FormCheckbox
             label={dict.forms.taxDeductible}
             name="taxDeductible"

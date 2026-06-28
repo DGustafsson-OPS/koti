@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { createMaintenanceEvent } from "@/lib/queries";
 import { Button, Input, Select, Textarea, FormCheckbox } from "@/components/ui";
-import type { Room, Asset } from "@/db/schema";
+import type { Room, Asset, Contractor } from "@/db/schema";
 import { useI18n } from "@/components/locale-provider";
 import { parseTaxDeductible } from "@/lib/maintenance-costs";
+import { parseContractorForm } from "@/lib/contractors";
+import { ContractorField } from "@/components/forms/contractor-field";
 
 function todayDateInputValue() {
   return new Date().toISOString().slice(0, 10);
@@ -15,10 +17,12 @@ export function CreateHistoryForm({
   propertyId,
   rooms,
   assets,
+  contractors,
 }: {
   propertyId: string;
   rooms: Room[];
   assets: Asset[];
+  contractors: Contractor[];
 }) {
   const { dict } = useI18n();
   const f = dict.forms;
@@ -36,13 +40,14 @@ export function CreateHistoryForm({
     <form
       action={async (fd) => {
         const completedDate = fd.get("completedAt") as string;
+        const contractorInput = parseContractorForm(fd);
         await createMaintenanceEvent({
           propertyId,
           title: fd.get("title") as string,
           description: (fd.get("description") as string) || undefined,
           completedAt: Math.floor(new Date(completedDate).getTime() / 1000),
           cost: fd.get("cost") ? Number(fd.get("cost")) : undefined,
-          contractor: (fd.get("contractor") as string) || undefined,
+          ...contractorInput,
           taxDeductible: parseTaxDeductible(fd),
           notes: (fd.get("notes") as string) || undefined,
           roomId: (fd.get("roomId") as string) || undefined,
@@ -69,7 +74,7 @@ export function CreateHistoryForm({
         />
         <Input label={f.serviceCost} name="cost" type="number" placeholder="180" />
       </div>
-      <Input label={f.contractor} name="contractor" placeholder={dict.tasks.contractorPlaceholder} />
+      <ContractorField contractors={contractors} />
       <FormCheckbox label={f.taxDeductible} name="taxDeductible" />
       {rooms.length > 0 && (
         <Select label={f.room} name="roomId" defaultValue="">

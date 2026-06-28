@@ -198,6 +198,24 @@ export const tasks = mysqlTable(
   ]
 );
 
+export const contractors = mysqlTable(
+  "contractors",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    propertyId: varchar("property_id", { length: 36 })
+      .notNull()
+      .references(() => properties.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 255 }).notNull(),
+    specialty: varchar("specialty", { length: 128 }),
+    phone: varchar("phone", { length: 64 }),
+    email: varchar("email", { length: 255 }),
+    notes: text("notes"),
+    createdAt: int("created_at").notNull(),
+    updatedAt: int("updated_at").notNull(),
+  },
+  (t) => [index("idx_contractors_property").on(t.propertyId)]
+);
+
 export const maintenanceEvents = mysqlTable(
   "maintenance_events",
   {
@@ -219,6 +237,9 @@ export const maintenanceEvents = mysqlTable(
     completedAt: int("completed_at").notNull(),
     cost: double("cost"),
     contractor: varchar("contractor", { length: 255 }),
+    contractorId: varchar("contractor_id", { length: 36 }).references(() => contractors.id, {
+      onDelete: "set null",
+    }),
     taxDeductible: boolean("tax_deductible").notNull().default(false),
     notes: text("notes"),
     createdAt: int("created_at").notNull(),
@@ -289,6 +310,7 @@ export type Material = typeof materials.$inferSelect;
 export type Asset = typeof assets.$inferSelect;
 export type Warranty = typeof warranties.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
+export type Contractor = typeof contractors.$inferSelect;
 export type MaintenanceEvent = typeof maintenanceEvents.$inferSelect;
 export type Note = typeof notes.$inferSelect;
 export type Attachment = typeof attachments.$inferSelect;

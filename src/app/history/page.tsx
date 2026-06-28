@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { History } from "lucide-react";
-import { getProperties, getAllHistory } from "@/lib/queries";
+import { getProperties, getAllHistory, getContractors } from "@/lib/queries";
 import {
   PageContainer,
   PageHeader,
@@ -26,26 +26,30 @@ import { eq } from "drizzle-orm";
 export default async function HistoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ property?: string; room?: string; contractor?: string; year?: string }>;
+  searchParams: Promise<{ property?: string; room?: string; contractor?: string; contractorId?: string; year?: string }>;
 }) {
   const locale = await getLocale();
   const dict = getDictionary(locale);
 
-  const { property: propertyId, room: roomId, contractor, year } = await searchParams;
+  const { property: propertyId, room: roomId, contractor, contractorId, year } = await searchParams;
   const properties = await getProperties();
   const activePropertyId = propertyId ?? properties[0]?.id;
   const yearFilter = year ? Number(year) : undefined;
 
-  const events = await getAllHistory(activePropertyId, {
-    roomId: roomId || undefined,
-    contractor: contractor || undefined,
-    year: yearFilter,
-  });
+  const [events, propertyContractors] = await Promise.all([
+    getAllHistory(activePropertyId, {
+      roomId: roomId || undefined,
+      contractor: contractor || undefined,
+      contractorId: contractorId || undefined,
+      year: yearFilter,
+    }),
+    activePropertyId ? getContractors(activePropertyId) : Promise.resolve([]),
+  ]);
 
   const { totalServiceCost, deductibleCost } = summarizeMaintenanceCosts(events);
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 12 }, (_, i) => currentYear - i);
-  const filterParams = { room: roomId, contractor, year };
+  const filterParams = { room: roomId, contractor, contractorId, year };
 
   const propertyRooms = activePropertyId
     ? await db.select().from(rooms).where(eq(rooms.propertyId, activePropertyId))
@@ -64,11 +68,18 @@ export default async function HistoryPage({
         title={dict.history.title}
         subtitle={dict.history.subtitle}
         action={
-          exportHref ? (
-            <ButtonLink href={exportHref} variant="secondary">
-              {dict.history.exportMaintenance}
-            </ButtonLink>
-          ) : undefined
+          <div className="flex flex-wrap gap-2">
+            {activePropertyId && (
+              <ButtonLink href={`/properties/${activePropertyId}/contractors`} variant="secondary">
+                {dict.history.manageContractors}
+              </ButtonLink>
+            )}
+            {exportHref && (
+              <ButtonLink href={exportHref} variant="secondary">
+                {dict.history.exportMaintenance}
+              </ButtonLink>
+            )}
+          </div>
         }
       />
 
@@ -89,6 +100,16 @@ export default async function HistoryPage({
             </option>
           ))}
         </Select>
+        {propertyContractors.length > 0 && (
+          <Select label={dict.filters.filterByContractor} name="contractorId" defaultValue={contractorId ?? ""}>
+            <option value="">{dict.filters.allContractors}</option>
+            {propertyContractors.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+        )}
         {propertyRooms.length > 0 && (
           <Select label={dict.filters.filterByRoom} name="room" defaultValue={roomId ?? ""}>
             <option value="">{dict.filters.allRooms}</option>
@@ -100,7 +121,7 @@ export default async function HistoryPage({
           </Select>
         )}
         <Input
-          label={dict.filters.filterByContractor}
+          label={dict.forms.contractorOther}
           name="contractor"
           defaultValue={contractor ?? ""}
           placeholder={dict.tasks.contractorPlaceholder}
@@ -111,7 +132,7 @@ export default async function HistoryPage({
         >
           {dict.filters.apply}
         </button>
-        {(roomId || contractor || year) && (
+        {(roomId || contractor || contractorId || year) && (
           <Link
             href={queryUrl("/history", { property: activePropertyId })}
             className="text-sm text-brand-700 hover:underline pb-2.5"
@@ -147,6 +168,7 @@ export default async function HistoryPage({
             propertyId={activePropertyId}
             rooms={propertyRooms}
             assets={propertyAssets}
+            contractors={propertyContractors}
           />
         </Panel>
       )}
@@ -183,7 +205,17 @@ export default async function HistoryPage({
                             {formatCurrency(event.cost, locale)}
                           </span>
                         )}
-                        {event.contractor && <span>{event.contractor}</span>}
+                        {event.contractor &&
+                          (event.contractorId ? (
+                            <Link
+                              href={`/contractors/${event.contractorId}/edit`}
+                              className="hover:text-brand-700 hover:underline"
+                            >
+                              {event.contractor}
+                            </Link>
+                          ) : (
+                            <span>{event.contractor}</span>
+                          ))}
                       </div>
                       {event.notes && (
                         <p className="text-xs text-stone-500 mt-2 italic border-l-2 border-stone-200 pl-3">

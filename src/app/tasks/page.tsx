@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CheckSquare } from "lucide-react";
-import { getProperties, getTasks, completeTask } from "@/lib/queries";
+import { getProperties, getTasks, completeTask, getContractors } from "@/lib/queries";
 import {
   PageContainer,
   PageHeader,
@@ -27,13 +27,16 @@ import { db } from "@/db";
 import { assets, rooms } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { parseTaxDeductible } from "@/lib/maintenance-costs";
+import { parseContractorForm } from "@/lib/contractors";
+import { ContractorField } from "@/components/forms/contractor-field";
 
 async function handleComplete(formData: FormData) {
   "use server";
+  const contractorInput = parseContractorForm(formData);
   await completeTask({
     taskId: formData.get("taskId") as string,
     cost: formData.get("cost") ? Number(formData.get("cost")) : undefined,
-    contractor: (formData.get("contractor") as string) || undefined,
+    ...contractorInput,
     notes: (formData.get("notes") as string) || undefined,
     taxDeductible: parseTaxDeductible(formData),
   });
@@ -64,6 +67,7 @@ export default async function TasksPage({
   const propertyAssets = activePropertyId
     ? await db.select().from(assets).where(eq(assets.propertyId, activePropertyId))
     : [];
+  const propertyContractors = activePropertyId ? await getContractors(activePropertyId) : [];
 
   const ts = Math.floor(Date.now() / 1000);
 
@@ -145,11 +149,11 @@ export default async function TasksPage({
                 </div>
                 <form action={handleComplete} className="border-t border-stone-100 pt-4">
                   <input type="hidden" name="taskId" value={task.id} />
-                  <div className="grid sm:grid-cols-3 gap-3 mb-3">
+                  <div className="grid sm:grid-cols-2 gap-3 mb-3">
                     <Input name="cost" type="number" placeholder={dict.tasks.costPlaceholder} />
-                    <Input name="contractor" placeholder={dict.tasks.contractorPlaceholder} />
                     <Input name="notes" placeholder={dict.tasks.notesPlaceholder} />
                   </div>
+                  <ContractorField contractors={propertyContractors} />
                   <FormCheckbox label={dict.forms.taxDeductible} name="taxDeductible" />
                   <div className="mt-3">
                     <Button type="submit" variant="secondary" size="sm">
