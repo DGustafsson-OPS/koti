@@ -966,16 +966,6 @@ export async function getExpiringWarranties(propertyId?: string, withinDays = 60
   return rows;
 }
 
-// ─── Dashboard stats ──────────────────────────────────────────────────────────
-
-export async function getInventoryValue(propertyId: string) {
-  const [result] = await db
-    .select({ total: sql<number>`coalesce(sum(${assets.replacementValue}), 0)` })
-    .from(assets)
-    .where(eq(assets.propertyId, propertyId));
-  return result?.total ?? 0;
-}
-
 // ─── Search ───────────────────────────────────────────────────────────────────
 
 export type SearchResult = {

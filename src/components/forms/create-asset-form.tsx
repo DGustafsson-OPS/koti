@@ -40,10 +40,6 @@ export function CreateAssetForm({
           brand: (fd.get("brand") as string) || undefined,
           model: (fd.get("model") as string) || undefined,
           serialNumber: (fd.get("serialNumber") as string) || undefined,
-          purchasePrice: fd.get("purchasePrice") ? Number(fd.get("purchasePrice")) : undefined,
-          replacementValue: fd.get("replacementValue")
-            ? Number(fd.get("replacementValue"))
-            : undefined,
           warrantyExpiresAt: warrantyDate
             ? Math.floor(new Date(warrantyDate).getTime() / 1000)
             : undefined,
@@ -76,10 +72,6 @@ export function CreateAssetForm({
         <Input label={f.model} name="model" />
       </div>
       <Input label={f.serialNumber} name="serialNumber" />
-      <div className="grid grid-cols-2 gap-3">
-        <Input label={f.purchasePrice} name="purchasePrice" type="number" />
-        <Input label={f.replacementValue} name="replacementValue" type="number" />
-      </div>
       <div className="grid grid-cols-2 gap-3">
         <Input label={f.warrantyExpires} name="warrantyExpiresAt" type="date" />
         <Input label={f.warrantyProvider} name="warrantyProvider" />

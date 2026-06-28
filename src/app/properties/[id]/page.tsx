@@ -7,7 +7,6 @@ import {
   getAssets,
   getMaterials,
   getTasks,
-  getInventoryValue,
   getAttachments,
 } from "@/lib/queries";
 import {
@@ -20,7 +19,6 @@ import {
   Callout,
   ButtonLink,
 } from "@/components/ui";
-import { formatCurrency } from "@/lib/utils";
 import {
   getDictionary,
   categoryLabel,
@@ -44,14 +42,12 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
   const property = await getProperty(id);
   if (!property) notFound();
 
-  const [buildings, rooms, assets, materials, pendingTasks, inventoryValue, attachmentList] =
-    await Promise.all([
+  const [buildings, rooms, assets, materials, pendingTasks, attachmentList] = await Promise.all([
     getBuildings(id),
     getRooms(id),
     getAssets(id),
     getMaterials(id),
     getTasks(id),
-    getInventoryValue(id),
     getAttachments("property", id),
   ]);
 
@@ -89,13 +85,9 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
 
       {property.notes && <Callout variant="warning">{property.notes}</Callout>}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+      <div className="grid grid-cols-2 gap-4 mb-10 max-w-md">
         <StatCard label={dict.property.rooms} value={rooms.length} />
         <StatCard label={dict.property.assets} value={assets.length} />
-        <StatCard
-          label={dict.dashboard.inventoryValue}
-          value={formatCurrency(inventoryValue, locale)}
-        />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-10">
