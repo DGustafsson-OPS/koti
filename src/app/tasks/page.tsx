@@ -12,6 +12,7 @@ import {
   FilterTabs,
   Input,
   Panel,
+  FormCheckbox,
 } from "@/components/ui";
 import { formatDate, PRIORITY_COLORS } from "@/lib/utils";
 import {
@@ -25,6 +26,7 @@ import { CreateTaskForm } from "@/components/forms/create-task-form";
 import { db } from "@/db";
 import { assets, rooms } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { parseTaxDeductible } from "@/lib/maintenance-costs";
 
 async function handleComplete(formData: FormData) {
   "use server";
@@ -33,6 +35,7 @@ async function handleComplete(formData: FormData) {
     cost: formData.get("cost") ? Number(formData.get("cost")) : undefined,
     contractor: (formData.get("contractor") as string) || undefined,
     notes: (formData.get("notes") as string) || undefined,
+    taxDeductible: parseTaxDeductible(formData),
   });
 }
 
@@ -147,9 +150,12 @@ export default async function TasksPage({
                     <Input name="contractor" placeholder={dict.tasks.contractorPlaceholder} />
                     <Input name="notes" placeholder={dict.tasks.notesPlaceholder} />
                   </div>
-                  <Button type="submit" variant="secondary" size="sm">
-                    {dict.common.markComplete}
-                  </Button>
+                  <FormCheckbox label={dict.forms.taxDeductible} name="taxDeductible" />
+                  <div className="mt-3">
+                    <Button type="submit" variant="secondary" size="sm">
+                      {dict.common.markComplete}
+                    </Button>
+                  </div>
                 </form>
               </Card>
             );

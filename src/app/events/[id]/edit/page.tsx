@@ -8,12 +8,13 @@ import {
   updateMaintenanceEvent,
   deleteMaintenanceEvent,
 } from "@/lib/queries";
-import { PageContainer, PageHeader, Input, Select, Textarea, Button, Panel, Section } from "@/components/ui";
+import { PageContainer, PageHeader, Input, Select, Textarea, Button, Panel, Section, FormCheckbox } from "@/components/ui";
 import { ConfirmDeleteForm } from "@/components/forms/confirm-delete-form";
 import { AttachmentsSection } from "@/components/attachments-section";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { dateInputToTimestamp, timestampToDateInput } from "@/lib/date-input";
+import { parseTaxDeductible } from "@/lib/maintenance-costs";
 
 export default async function EditEventPage({ params }: { params: Promise<{ id: string }> }) {
   const locale = await getLocale();
@@ -37,6 +38,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
       completedAt: dateInputToTimestamp(formData.get("completedAt") as string),
       cost: formData.get("cost") ? Number(formData.get("cost")) : undefined,
       contractor: (formData.get("contractor") as string) || undefined,
+      taxDeductible: parseTaxDeductible(formData),
       notes: (formData.get("notes") as string) || undefined,
       roomId: (formData.get("roomId") as string) || undefined,
       assetId: (formData.get("assetId") as string) || undefined,
@@ -69,9 +71,19 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
               required
               defaultValue={timestampToDateInput(event.completedAt)}
             />
-            <Input label={dict.forms.cost} name="cost" type="number" defaultValue={event.cost ?? undefined} />
+            <Input
+              label={dict.forms.serviceCost}
+              name="cost"
+              type="number"
+              defaultValue={event.cost ?? undefined}
+            />
           </div>
           <Input label={dict.forms.contractor} name="contractor" defaultValue={event.contractor ?? ""} />
+          <FormCheckbox
+            label={dict.forms.taxDeductible}
+            name="taxDeductible"
+            defaultChecked={event.taxDeductible}
+          />
           {rooms.length > 0 && (
             <Select label={dict.forms.room} name="roomId" defaultValue={event.roomId ?? ""}>
               <option value="">{dict.common.none}</option>

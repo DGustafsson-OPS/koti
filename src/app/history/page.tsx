@@ -10,13 +10,15 @@ import {
   Panel,
   Select,
   Input,
-  Button,
+  ButtonLink,
+  Badge,
 } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { queryUrl } from "@/lib/query-url";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { CreateHistoryForm } from "@/components/forms/create-history-form";
+import { summarizeMaintenanceCosts } from "@/lib/maintenance-costs";
 import { db } from "@/db";
 import { assets, rooms } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -24,19 +26,26 @@ import { eq } from "drizzle-orm";
 export default async function HistoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ property?: string; room?: string; contractor?: string }>;
+  searchParams: Promise<{ property?: string; room?: string; contractor?: string; year?: string }>;
 }) {
   const locale = await getLocale();
   const dict = getDictionary(locale);
 
-  const { property: propertyId, room: roomId, contractor } = await searchParams;
+  const { property: propertyId, room: roomId, contractor, year } = await searchParams;
   const properties = await getProperties();
   const activePropertyId = propertyId ?? properties[0]?.id;
+  const yearFilter = year ? Number(year) : undefined;
 
   const events = await getAllHistory(activePropertyId, {
     roomId: roomId || undefined,
     contractor: contractor || undefined,
+    year: yearFilter,
   });
+
+  const { totalServiceCost, deductibleCost } = summarizeMaintenanceCosts(events);
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 12 }, (_, i) => currentYear - i);
+  const filterParams = { room: roomId, contractor, year };
 
   const propertyRooms = activePropertyId
     ? await db.select().from(rooms).where(eq(rooms.propertyId, activePropertyId))
@@ -45,23 +54,41 @@ export default async function HistoryPage({
     ? await db.select().from(assets).where(eq(assets.propertyId, activePropertyId))
     : [];
 
+  const exportHref = activePropertyId
+    ? queryUrl("/api/export/maintenance", { property: activePropertyId, year })
+    : undefined;
+
   return (
     <PageContainer size="wide">
-      <PageHeader title={dict.history.title} subtitle={dict.history.subtitle} />
+      <PageHeader
+        title={dict.history.title}
+        subtitle={dict.history.subtitle}
+        action={
+          exportHref ? (
+            <ButtonLink href={exportHref} variant="secondary">
+              {dict.history.exportMaintenance}
+            </ButtonLink>
+          ) : undefined
+        }
+      />
 
       <PropertyTabs
         properties={properties}
         activeId={activePropertyId}
         basePath="/history"
-        params={{ room: roomId, contractor }}
+        params={filterParams}
       />
 
-      <form
-        action="/history"
-        method="get"
-        className="flex flex-wrap gap-3 mb-6 items-end"
-      >
+      <form action="/history" method="get" className="flex flex-wrap gap-3 mb-6 items-end">
         {activePropertyId && <input type="hidden" name="property" value={activePropertyId} />}
+        <Select label={dict.filters.filterByYear} name="year" defaultValue={year ?? ""}>
+          <option value="">{dict.filters.allYears}</option>
+          {yearOptions.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </Select>
         {propertyRooms.length > 0 && (
           <Select label={dict.filters.filterByRoom} name="room" defaultValue={roomId ?? ""}>
             <option value="">{dict.filters.allRooms}</option>
@@ -78,10 +105,13 @@ export default async function HistoryPage({
           defaultValue={contractor ?? ""}
           placeholder={dict.tasks.contractorPlaceholder}
         />
-        <Button type="submit" variant="secondary">
+        <button
+          type="submit"
+          className="px-4 py-2.5 text-sm font-medium rounded-xl border border-stone-200 bg-surface text-stone-700 hover:border-brand-300 hover:bg-brand-50/50 transition-all"
+        >
           {dict.filters.apply}
-        </Button>
-        {(roomId || contractor) && (
+        </button>
+        {(roomId || contractor || year) && (
           <Link
             href={queryUrl("/history", { property: activePropertyId })}
             className="text-sm text-brand-700 hover:underline pb-2.5"
@@ -90,6 +120,26 @@ export default async function HistoryPage({
           </Link>
         )}
       </form>
+
+      {events.length > 0 && (
+        <Panel title={dict.history.serviceCosts} className="mb-8">
+          <p className="text-sm text-stone-500 mb-4">{dict.history.serviceCostsHelp}</p>
+          <div className="grid sm:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-stone-500">{dict.history.totalServiceCost}</p>
+              <p className="text-xl font-semibold text-stone-900 mt-1">
+                {formatCurrency(totalServiceCost, locale)}
+              </p>
+            </div>
+            <div>
+              <p className="text-stone-500">{dict.history.totalDeductible}</p>
+              <p className="text-xl font-semibold text-stone-900 mt-1">
+                {formatCurrency(deductibleCost, locale)}
+              </p>
+            </div>
+          </div>
+        </Panel>
+      )}
 
       {activePropertyId && (
         <Panel title={dict.history.newEvent} className="mb-8">
@@ -115,7 +165,12 @@ export default async function HistoryPage({
                 <Card padding="sm">
                   <div className="flex justify-between items-start gap-3">
                     <div className="flex-1">
-                      <p className="font-medium text-stone-900">{event.title}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-stone-900">{event.title}</p>
+                        {event.taxDeductible && event.cost != null && (
+                          <Badge variant="green">{dict.common.taxDeductible}</Badge>
+                        )}
+                      </div>
                       {event.description && (
                         <p className="text-sm text-stone-500 mt-1 leading-relaxed">
                           {event.description}
@@ -123,7 +178,11 @@ export default async function HistoryPage({
                       )}
                       <div className="flex gap-3 mt-2 text-xs text-stone-400 flex-wrap">
                         <span>{formatDate(event.completedAt, locale)}</span>
-                        {event.cost && <span>{formatCurrency(event.cost, locale)}</span>}
+                        {event.cost != null && (
+                          <span className="font-medium text-stone-600">
+                            {formatCurrency(event.cost, locale)}
+                          </span>
+                        )}
                         {event.contractor && <span>{event.contractor}</span>}
                       </div>
                       {event.notes && (

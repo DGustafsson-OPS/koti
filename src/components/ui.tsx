@@ -388,6 +388,28 @@ export function Select({
   );
 }
 
+export function FormCheckbox({
+  label,
+  name,
+  defaultChecked,
+}: {
+  label: string;
+  name: string;
+  defaultChecked?: boolean;
+}) {
+  return (
+    <label className="flex items-center gap-2.5 text-sm text-stone-700 cursor-pointer">
+      <input
+        type="checkbox"
+        name={name}
+        defaultChecked={defaultChecked}
+        className="rounded border-stone-300 text-brand-700 focus:ring-brand-500/30"
+      />
+      {label}
+    </label>
+  );
+}
+
 export function Textarea({
   label,
   ...props

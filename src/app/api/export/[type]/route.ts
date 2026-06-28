@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/auth";
-import { exportAssetsCsv, exportTasksCsv } from "@/lib/export-data";
+import { exportAssetsCsv, exportTasksCsv, exportMaintenanceCsv } from "@/lib/export-data";
 
 export async function GET(
   request: NextRequest,
@@ -13,6 +13,8 @@ export async function GET(
 
   const { type } = await params;
   const propertyId = request.nextUrl.searchParams.get("property");
+  const yearParam = request.nextUrl.searchParams.get("year");
+  const year = yearParam ? Number(yearParam) : undefined;
   if (!propertyId) {
     return new Response("Missing property", { status: 400 });
   }
@@ -26,6 +28,9 @@ export async function GET(
   } else if (type === "tasks") {
     csv = await exportTasksCsv(propertyId);
     filename = "koti-tasks.csv";
+  } else if (type === "maintenance") {
+    csv = await exportMaintenanceCsv(propertyId, year);
+    filename = year ? `koti-maintenance-${year}.csv` : "koti-maintenance.csv";
   } else {
     return new Response("Not found", { status: 404 });
   }

@@ -4,6 +4,7 @@ import {
   text,
   int,
   double,
+  boolean,
   index,
 } from "drizzle-orm/mysql-core";
 
@@ -218,6 +219,7 @@ export const maintenanceEvents = mysqlTable(
     completedAt: int("completed_at").notNull(),
     cost: double("cost"),
     contractor: varchar("contractor", { length: 255 }),
+    taxDeductible: boolean("tax_deductible").notNull().default(false),
     notes: text("notes"),
     createdAt: int("created_at").notNull(),
   },

@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { createMaintenanceEvent } from "@/lib/queries";
-import { Button, Input, Select, Textarea } from "@/components/ui";
+import { Button, Input, Select, Textarea, FormCheckbox } from "@/components/ui";
 import type { Room, Asset } from "@/db/schema";
 import { useI18n } from "@/components/locale-provider";
+import { parseTaxDeductible } from "@/lib/maintenance-costs";
 
 function todayDateInputValue() {
   return new Date().toISOString().slice(0, 10);
@@ -42,6 +43,7 @@ export function CreateHistoryForm({
           completedAt: Math.floor(new Date(completedDate).getTime() / 1000),
           cost: fd.get("cost") ? Number(fd.get("cost")) : undefined,
           contractor: (fd.get("contractor") as string) || undefined,
+          taxDeductible: parseTaxDeductible(fd),
           notes: (fd.get("notes") as string) || undefined,
           roomId: (fd.get("roomId") as string) || undefined,
           assetId: (fd.get("assetId") as string) || undefined,
@@ -65,9 +67,10 @@ export function CreateHistoryForm({
           required
           defaultValue={todayDateInputValue()}
         />
-        <Input label={f.cost} name="cost" type="number" placeholder="180" />
+        <Input label={f.serviceCost} name="cost" type="number" placeholder="180" />
       </div>
       <Input label={f.contractor} name="contractor" placeholder={dict.tasks.contractorPlaceholder} />
+      <FormCheckbox label={f.taxDeductible} name="taxDeductible" />
       {rooms.length > 0 && (
         <Select label={f.room} name="roomId" defaultValue="">
           <option value="">{dict.common.none}</option>

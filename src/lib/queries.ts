@@ -15,7 +15,7 @@ import {
   entityLinks,
   attachments,
 } from "@/db/schema";
-import { eq, desc, asc, and, lte, gte, or, like, sql, isNull } from "drizzle-orm";
+import { eq, desc, asc, and, lte, gte, lt, or, like, sql, isNull } from "drizzle-orm";
 import { now, nextDueDate } from "@/lib/utils";
 import { v4 as uuid } from "uuid";
 import { revalidatePath } from "next/cache";
@@ -776,6 +776,7 @@ export async function completeTask(data: {
   cost?: number;
   contractor?: string;
   notes?: string;
+  taxDeductible?: boolean;
 }) {
   const [task] = await db.select().from(tasks).where(eq(tasks.id, data.taskId));
   if (!task) throw new Error("Task not found");
@@ -794,6 +795,7 @@ export async function completeTask(data: {
     completedAt: ts,
     cost: data.cost ?? null,
     contractor: data.contractor ?? null,
+    taxDeductible: data.taxDeductible ?? false,
     notes: data.notes ?? null,
     createdAt: ts,
   });
@@ -831,6 +833,7 @@ export async function createMaintenanceEvent(data: {
   completedAt: number;
   cost?: number;
   contractor?: string;
+  taxDeductible?: boolean;
   notes?: string;
   roomId?: string;
   assetId?: string;
@@ -848,6 +851,7 @@ export async function createMaintenanceEvent(data: {
     completedAt: data.completedAt,
     cost: data.cost ?? null,
     contractor: data.contractor ?? null,
+    taxDeductible: data.taxDeductible ?? false,
     notes: data.notes ?? null,
     createdAt: ts,
   });
@@ -871,6 +875,7 @@ export async function updateMaintenanceEvent(
     completedAt: number;
     cost?: number;
     contractor?: string;
+    taxDeductible?: boolean;
     notes?: string;
     roomId?: string;
     assetId?: string;
@@ -887,6 +892,7 @@ export async function updateMaintenanceEvent(
       completedAt: data.completedAt,
       cost: data.cost ?? null,
       contractor: data.contractor ?? null,
+      taxDeductible: data.taxDeductible ?? false,
       notes: data.notes ?? null,
       roomId: data.roomId ?? null,
       assetId: data.assetId ?? null,
@@ -928,13 +934,19 @@ export async function getRecentHistory(propertyId?: string, limit = 10) {
 
 export async function getAllHistory(
   propertyId?: string,
-  filters?: { roomId?: string; contractor?: string }
+  filters?: { roomId?: string; contractor?: string; year?: number }
 ) {
   const conditions = [];
   if (propertyId) conditions.push(eq(maintenanceEvents.propertyId, propertyId));
   if (filters?.roomId) conditions.push(eq(maintenanceEvents.roomId, filters.roomId));
   if (filters?.contractor) {
     conditions.push(like(maintenanceEvents.contractor, `%${filters.contractor}%`));
+  }
+  if (filters?.year) {
+    const start = Math.floor(new Date(`${filters.year}-01-01T00:00:00`).getTime() / 1000);
+    const end = Math.floor(new Date(`${filters.year + 1}-01-01T00:00:00`).getTime() / 1000);
+    conditions.push(gte(maintenanceEvents.completedAt, start));
+    conditions.push(lt(maintenanceEvents.completedAt, end));
   }
 
   if (conditions.length === 0) {
