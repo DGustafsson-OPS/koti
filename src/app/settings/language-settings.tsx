@@ -23,7 +23,7 @@ export function LanguageSettings({ currentLocale }: { currentLocale: Locale }) {
   return (
     <Panel title={dict.settings.language}>
       <p className="text-sm text-stone-500 mb-5 leading-relaxed">{dict.settings.languageHelp}</p>
-      <div className="grid sm:grid-cols-2 gap-3">
+      <div className="grid sm:grid-cols-3 gap-3">
         {LOCALES.map(({ value, label }) => (
           <button
             key={value}

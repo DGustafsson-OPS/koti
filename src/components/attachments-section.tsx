@@ -6,6 +6,7 @@ import { Button } from "@/components/ui";
 import { useI18n } from "@/components/locale-provider";
 import { formatFileSize } from "@/lib/format-file-size";
 import type { Attachment } from "@/db/schema";
+import type { Locale } from "@/lib/i18n/types";
 import { formatDate } from "@/lib/utils";
 
 export function AttachmentsSection({
@@ -19,7 +20,7 @@ export function AttachmentsSection({
   entityType: string;
   entityId: string;
   attachments: Attachment[];
-  locale: "en" | "fi";
+  locale: Locale;
 }) {
   const { dict } = useI18n();
   const a = dict.attachments;

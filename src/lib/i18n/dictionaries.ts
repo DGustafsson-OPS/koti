@@ -1,10 +1,12 @@
 import { en } from "./en";
 import { fi as fiRaw } from "./fi";
+import { sv as svRaw } from "./sv";
 import type { Dictionary, Locale } from "./types";
 
 const fi = fiRaw as unknown as Dictionary;
+const sv = svRaw as unknown as Dictionary;
 
-const dictionaries: Record<Locale, Dictionary> = { en, fi };
+const dictionaries: Record<Locale, Dictionary> = { en, fi, sv };
 
 export function getDictionary(locale: Locale): Dictionary {
   return dictionaries[locale];
@@ -45,9 +47,13 @@ export function buildingTypeLabel(dict: Dictionary, key: string): string {
 }
 
 export function dateLocale(locale: Locale): string {
-  return locale === "fi" ? "fi-FI" : "en-GB";
+  if (locale === "fi") return "fi-FI";
+  if (locale === "sv") return "sv-FI";
+  return "en-GB";
 }
 
 export function currencyLocale(locale: Locale): string {
-  return locale === "fi" ? "fi-FI" : "en-GB";
+  if (locale === "fi") return "fi-FI";
+  if (locale === "sv") return "sv-FI";
+  return "en-GB";
 }
