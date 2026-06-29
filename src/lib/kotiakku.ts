@@ -6,6 +6,10 @@ export type KotiakkuMeasurement = {
   batteryPowerKw: number | null;
   stateOfChargePercent: number | null;
   solarPowerKw: number | null;
+  solarArray1PowerKw: number | null;
+  solarArray2PowerKw: number | null;
+  solarArray3PowerKw: number | null;
+  solarArray4PowerKw: number | null;
   gridPowerKw: number | null;
   housePowerKw: number | null;
   solarToHouseKw: number | null;
@@ -15,7 +19,9 @@ export type KotiakkuMeasurement = {
   gridToBatteryKw: number | null;
   batteryToHouseKw: number | null;
   batteryToGridKw: number | null;
+  batteryLossKw: number | null;
   spotPriceCentsPerKwh: number | null;
+  totalPriceCentsPerKwh: number | null;
   batteryTemperatureCelsius: number | null;
 };
 
@@ -41,6 +47,10 @@ function parseMeasurement(raw: Record<string, unknown>): KotiakkuMeasurement {
     batteryPowerKw: num("battery_power_kw"),
     stateOfChargePercent: num("state_of_charge_percent"),
     solarPowerKw: num("solar_power_kw"),
+    solarArray1PowerKw: num("solar_array_1_power_kw"),
+    solarArray2PowerKw: num("solar_array_2_power_kw"),
+    solarArray3PowerKw: num("solar_array_3_power_kw"),
+    solarArray4PowerKw: num("solar_array_4_power_kw"),
     gridPowerKw: num("grid_power_kw"),
     housePowerKw: num("house_power_kw"),
     solarToHouseKw: num("solar_to_house_kw"),
@@ -50,7 +60,9 @@ function parseMeasurement(raw: Record<string, unknown>): KotiakkuMeasurement {
     gridToBatteryKw: num("grid_to_battery_kw"),
     batteryToHouseKw: num("battery_to_house_kw"),
     batteryToGridKw: num("battery_to_grid_kw"),
+    batteryLossKw: num("battery_loss_kw"),
     spotPriceCentsPerKwh: num("spot_price_cents_per_kwh"),
+    totalPriceCentsPerKwh: num("total_price_cents_per_kwh"),
     batteryTemperatureCelsius: num("battery_temperature_celsius"),
   };
 }
@@ -122,4 +134,13 @@ export function formatSpotPrice(value: number | null | undefined, locale: string
 
 export function propertyHasKotiakku(property: { kotiakkuApiKeyEnc?: string | null }) {
   return Boolean(property.kotiakkuApiKeyEnc);
+}
+
+export function hasSolarArrayData(latest: KotiakkuMeasurement): boolean {
+  return [
+    latest.solarArray1PowerKw,
+    latest.solarArray2PowerKw,
+    latest.solarArray3PowerKw,
+    latest.solarArray4PowerKw,
+  ].some((value) => value != null && value > 0);
 }

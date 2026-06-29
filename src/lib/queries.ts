@@ -1452,6 +1452,27 @@ export async function disconnectKotiakku(propertyId: string) {
   revalidatePath("/");
 }
 
+export async function updateEnergyTariff(propertyId: string, tariff: {
+  spotMarginCents: number;
+  importTransferCents: number;
+  electricityTaxCents: number;
+  exportTransferCents: number;
+}) {
+  await db
+    .update(properties)
+    .set({
+      energySpotMarginCents: tariff.spotMarginCents,
+      energyImportTransferCents: tariff.importTransferCents,
+      energyElectricityTaxCents: tariff.electricityTaxCents,
+      energyExportTransferCents: tariff.exportTransferCents,
+      updatedAt: now(),
+    })
+    .where(eq(properties.id, propertyId));
+
+  revalidatePath("/energy");
+  revalidatePath("/");
+}
+
 export async function fetchPropertyKotiakkuLatest(
   propertyId: string
 ): Promise<KotiakkuMeasurement | null> {
@@ -1468,7 +1489,6 @@ export async function fetchPropertyKotiakkuHistory(
   if (!apiKey) return [];
 
   const startTime = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
-  const data = await getKotiakkuRange(apiKey, startTime);
-  return data.slice(-48);
+  return getKotiakkuRange(apiKey, startTime);
 }
 

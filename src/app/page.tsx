@@ -12,7 +12,11 @@ import {
   getUpcomingTasks,
   getExpiringWarranties,
   getRecentHistory,
+  fetchPropertyKotiakkuLatest,
 } from "@/lib/queries";
+import { propertyHasKotiakku } from "@/lib/kotiakku";
+import { getLatestSpotPrices } from "@/lib/porssisahko";
+import { DashboardEnergyCard } from "@/components/kotiakku/dashboard-energy-card";
 import {
   PageContainer,
   Section,
@@ -45,11 +49,15 @@ export default async function DashboardPage({
   const activePropertyId = propertyId ?? properties[0]?.id;
   const property = properties.find((p) => p.id === activePropertyId) ?? properties[0];
 
-  const [overdue, upcoming, expiring, history] = await Promise.all([
+  const [overdue, upcoming, expiring, history, energyLatest, spotSlots] = await Promise.all([
     getOverdueTasks(property?.id),
     getUpcomingTasks(property?.id),
     getExpiringWarranties(property?.id),
     getRecentHistory(property?.id, 5),
+    property && propertyHasKotiakku(property)
+      ? fetchPropertyKotiakkuLatest(property.id).catch(() => null)
+      : Promise.resolve(null),
+    getLatestSpotPrices().catch(() => []),
   ]);
 
   const tasks = [...overdue, ...upcoming].slice(0, 6);
@@ -213,6 +221,19 @@ export default async function DashboardPage({
         </div>
 
         <div className="space-y-8">
+          {energyLatest && (
+            <Section title={dict.dashboard.energyTitle}>
+              <DashboardEnergyCard
+                propertyId={property.id}
+                propertyName={property.name}
+                latest={energyLatest}
+                spotSlots={spotSlots}
+                locale={locale}
+                dict={dict}
+              />
+            </Section>
+          )}
+
           <Section title={dict.dashboard.expiringWarranties}>
             {expiring.length === 0 ? (
               <EmptyState message={dict.dashboard.noWarranties} />

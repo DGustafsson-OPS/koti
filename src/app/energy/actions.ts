@@ -1,7 +1,8 @@
 "use server";
 
-import { connectKotiakku, disconnectKotiakku } from "@/lib/queries";
+import { connectKotiakku, disconnectKotiakku, updateEnergyTariff } from "@/lib/queries";
 import { KotiakkuApiError } from "@/lib/kotiakku";
+import { parseTariffForm } from "@/lib/energy-tariff";
 import { auth } from "@/auth";
 
 export async function connectKotiakkuAction(propertyId: string, formData: FormData) {
@@ -31,4 +32,14 @@ export async function disconnectKotiakkuAction(propertyId: string) {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
   await disconnectKotiakku(propertyId);
+}
+
+export async function saveEnergyTariffAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const propertyId = String(formData.get("propertyId") ?? "");
+  if (!propertyId) throw new Error("Missing property");
+
+  await updateEnergyTariff(propertyId, parseTariffForm(formData));
 }

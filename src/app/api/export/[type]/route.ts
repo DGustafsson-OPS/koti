@@ -1,6 +1,15 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/auth";
-import { exportAssetsCsv, exportTasksCsv, exportRoomsCsv, exportMaterialsCsv, exportMaintenanceCsv } from "@/lib/export-data";
+import {
+  exportAssetsCsv,
+  exportTasksCsv,
+  exportRoomsCsv,
+  exportMaterialsCsv,
+  exportMaintenanceCsv,
+} from "@/lib/export-data";
+import { fetchPropertyKotiakkuHistory } from "@/lib/queries";
+import { exportEnergyCsv } from "@/lib/energy-export";
+import { energyRangeHours, parseEnergyRange } from "@/lib/energy-analytics";
 
 export async function GET(
   request: NextRequest,
@@ -37,6 +46,11 @@ export async function GET(
   } else if (type === "maintenance") {
     csv = await exportMaintenanceCsv(propertyId, year);
     filename = year ? `koti-maintenance-${year}.csv` : "koti-maintenance.csv";
+  } else if (type === "energy") {
+    const range = parseEnergyRange(request.nextUrl.searchParams.get("range") ?? undefined);
+    const history = await fetchPropertyKotiakkuHistory(propertyId, energyRangeHours(range));
+    csv = exportEnergyCsv(history);
+    filename = `koti-energy-${range}.csv`;
   } else {
     return new Response("Not found", { status: 404 });
   }

@@ -47,6 +47,10 @@ export const properties = mysqlTable("properties", {
   notes: text("notes"),
   kotiakkuApiKeyEnc: text("kotiakku_api_key_enc"),
   kotiakkuConnectedAt: int("kotiakku_connected_at"),
+  energySpotMarginCents: double("energy_spot_margin_cents"),
+  energyImportTransferCents: double("energy_import_transfer_cents"),
+  energyElectricityTaxCents: double("energy_electricity_tax_cents"),
+  energyExportTransferCents: double("energy_export_transfer_cents"),
   createdAt: int("created_at").notNull(),
   updatedAt: int("updated_at").notNull(),
 });
