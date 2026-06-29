@@ -36,14 +36,14 @@ export default async function HistoryPage({
   const activePropertyId = propertyId ?? properties[0]?.id;
   const yearFilter = year ? Number(year) : undefined;
 
-  const [events, propertyContractors] = await Promise.all([
+  const [events, allContractors] = await Promise.all([
     getAllHistory(activePropertyId, {
       roomId: roomId || undefined,
       contractor: contractor || undefined,
       contractorId: contractorId || undefined,
       year: yearFilter,
     }),
-    activePropertyId ? getContractors(activePropertyId) : Promise.resolve([]),
+    getContractors(),
   ]);
 
   const { totalServiceCost, deductibleCost } = summarizeMaintenanceCosts(events);
@@ -68,18 +68,11 @@ export default async function HistoryPage({
         title={dict.history.title}
         subtitle={dict.history.subtitle}
         action={
-          <div className="flex flex-wrap gap-2">
-            {activePropertyId && (
-              <ButtonLink href={`/properties/${activePropertyId}/contractors`} variant="secondary">
-                {dict.history.manageContractors}
-              </ButtonLink>
-            )}
-            {exportHref && (
-              <ButtonLink href={exportHref} variant="secondary">
-                {dict.history.exportMaintenance}
-              </ButtonLink>
-            )}
-          </div>
+          exportHref ? (
+            <ButtonLink href={exportHref} variant="secondary">
+              {dict.history.exportMaintenance}
+            </ButtonLink>
+          ) : undefined
         }
       />
 
@@ -100,10 +93,10 @@ export default async function HistoryPage({
             </option>
           ))}
         </Select>
-        {propertyContractors.length > 0 && (
+        {allContractors.length > 0 && (
           <Select label={dict.filters.filterByContractor} name="contractorId" defaultValue={contractorId ?? ""}>
             <option value="">{dict.filters.allContractors}</option>
-            {propertyContractors.map((c) => (
+            {allContractors.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
@@ -168,7 +161,7 @@ export default async function HistoryPage({
             propertyId={activePropertyId}
             rooms={propertyRooms}
             assets={propertyAssets}
-            contractors={propertyContractors}
+            contractors={allContractors}
           />
         </Panel>
       )}

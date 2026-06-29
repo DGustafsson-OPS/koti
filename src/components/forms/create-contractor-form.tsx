@@ -5,7 +5,7 @@ import { createContractor } from "@/lib/queries";
 import { Button, Input, Textarea } from "@/components/ui";
 import { useI18n } from "@/components/locale-provider";
 
-export function CreateContractorForm({ propertyId }: { propertyId: string }) {
+export function CreateContractorForm() {
   const { dict } = useI18n();
   const f = dict.forms;
   const [open, setOpen] = useState(false);
@@ -22,7 +22,6 @@ export function CreateContractorForm({ propertyId }: { propertyId: string }) {
     <form
       action={async (fd) => {
         await createContractor({
-          propertyId,
           name: fd.get("name") as string,
           specialty: (fd.get("specialty") as string) || undefined,
           phone: (fd.get("phone") as string) || undefined,

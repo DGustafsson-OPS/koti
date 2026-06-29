@@ -21,6 +21,7 @@ import {
   EmptyState,
   StatCard,
   ButtonLink,
+  PropertyTabs,
 } from "@/components/ui";
 import {
   getDictionary,
@@ -31,12 +32,18 @@ import { getLocale } from "@/lib/i18n/server";
 import { formatDate, formatCurrency, daysUntil, PRIORITY_COLORS } from "@/lib/utils";
 import { queryUrl } from "@/lib/query-url";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ property?: string }>;
+}) {
   const locale = await getLocale();
   const dict = getDictionary(locale);
 
+  const { property: propertyId } = await searchParams;
   const properties = await getProperties();
-  const property = properties[0];
+  const activePropertyId = propertyId ?? properties[0]?.id;
+  const property = properties.find((p) => p.id === activePropertyId) ?? properties[0];
 
   const [overdue, upcoming, expiring, history] = await Promise.all([
     getOverdueTasks(property?.id),
@@ -62,6 +69,12 @@ export default async function DashboardPage() {
 
   return (
     <PageContainer size="wide">
+      <PropertyTabs
+        properties={properties}
+        activeId={property.id}
+        basePath="/"
+      />
+
       <section className="relative overflow-hidden rounded-3xl bg-brand-900 text-white px-6 sm:px-8 py-8 sm:py-10 mb-8 shadow-xl shadow-brand-900/20">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_50%)]" />
         <div className="absolute -right-8 -bottom-8 w-48 h-48 rounded-full bg-brand-700/30 blur-2xl" />
@@ -175,7 +188,7 @@ export default async function DashboardPage() {
           <Section
             title={dict.dashboard.recentHistory}
             action={
-              <Link href="/history" className="text-xs text-brand-700 hover:underline font-medium">
+              <Link href={queryUrl("/history", { property: property.id })} className="text-xs text-brand-700 hover:underline font-medium">
                 {dict.common.viewAll}
               </Link>
             }

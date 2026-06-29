@@ -21,13 +21,13 @@ export default async function EditContractorPage({ params }: { params: Promise<{
       email: (formData.get("email") as string) || undefined,
       notes: (formData.get("notes") as string) || undefined,
     });
-    redirect(`/properties/${contractor!.propertyId}/contractors`);
+    redirect("/contractors");
   }
 
   async function handleDelete() {
     "use server";
     await deleteContractor(id);
-    redirect(`/properties/${contractor!.propertyId}/contractors`);
+    redirect("/contractors");
   }
 
   return (
@@ -36,7 +36,7 @@ export default async function EditContractorPage({ params }: { params: Promise<{
         title={dict.contractorEdit.title}
         subtitle={dict.contractorEdit.subtitle}
         back={{
-          href: `/properties/${contractor.propertyId}/contractors`,
+          href: "/contractors",
           label: dict.contractors.title,
         }}
       />

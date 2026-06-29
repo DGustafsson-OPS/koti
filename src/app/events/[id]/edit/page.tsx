@@ -31,7 +31,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
     getRooms(event.propertyId),
     getAssets(event.propertyId),
     getAttachments("event", id),
-    getContractors(event.propertyId),
+    getContractors(),
   ]);
 
   async function handleUpdate(formData: FormData) {

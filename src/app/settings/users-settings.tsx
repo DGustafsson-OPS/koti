@@ -8,14 +8,22 @@ import {
   createCredentialsUser,
   setCredentialsPassword,
   deleteUser,
+  setupCredentialsForPendingUser,
 } from "@/lib/users";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
-import { Panel, Badge, Button } from "@/components/ui";
+import { Panel, Badge } from "@/components/ui";
 import { UserRoleForm } from "./user-role-form";
 import { InviteUserForm } from "./invite-user-form";
 import { CreateUserForm } from "./create-user-form";
 import { ResetPasswordForm } from "./reset-password-form";
+import { UserRemoveButton } from "./user-remove-button";
+import { SetupInviteForm } from "./setup-invite-form";
+
+function suggestedUsername(email: string | null | undefined) {
+  if (!email || email.endsWith("@local.koti")) return "";
+  return email.split("@")[0].toLowerCase().replace(/[^a-z0-9._-]/g, "");
+}
 
 export async function UsersSettings() {
   const session = await auth();
@@ -96,6 +104,17 @@ export async function UsersSettings() {
 
     const userId = formData.get("userId") as string;
     await deleteUser(userId, session.user.id);
+  }
+
+  async function handleSetupInvite(formData: FormData) {
+    "use server";
+    const session = await auth();
+    if (session?.user?.role !== "admin") return;
+
+    const userId = formData.get("userId") as string;
+    const username = formData.get("username") as string;
+    const password = formData.get("password") as string;
+    await setupCredentialsForPendingUser(userId, username, password);
   }
 
   return (
@@ -188,23 +207,31 @@ export async function UsersSettings() {
                     <ResetPasswordForm userId={user.id} resetAction={handleResetPassword} />
                   )}
 
+                  {isAdmin && isPending && (
+                    <SetupInviteForm
+                      userId={user.id}
+                      defaultUsername={suggestedUsername(user.email)}
+                      setupAction={handleSetupInvite}
+                    />
+                  )}
+
                   {isAdmin && user.id !== session?.user?.id && (
                     <div className="flex gap-2">
                       {isPending && (
-                        <form action={handleRemoveInvite}>
-                          <input type="hidden" name="userId" value={user.id} />
-                          <Button type="submit" variant="ghost" className="text-xs text-red-600">
-                            {dict.common.delete}
-                          </Button>
-                        </form>
+                        <UserRemoveButton
+                          userId={user.id}
+                          label={dict.common.delete}
+                          confirmMessage={dict.settings.removeInviteConfirm}
+                          action={handleRemoveInvite}
+                        />
                       )}
                       {hasAccount && (
-                        <form action={handleDeleteUser}>
-                          <input type="hidden" name="userId" value={user.id} />
-                          <Button type="submit" variant="ghost" className="text-xs text-red-600">
-                            {dict.settings.removeUser}
-                          </Button>
-                        </form>
+                        <UserRemoveButton
+                          userId={user.id}
+                          label={dict.settings.removeUser}
+                          confirmMessage={dict.settings.removeUserConfirm}
+                          action={handleDeleteUser}
+                        />
                       )}
                     </div>
                   )}

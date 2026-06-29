@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
 import { uploadAttachment, removeAttachment } from "@/lib/attachment-actions";
 import { Button } from "@/components/ui";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useI18n } from "@/components/locale-provider";
 import { formatFileSize } from "@/lib/format-file-size";
 import type { Attachment } from "@/db/schema";
@@ -26,6 +27,8 @@ export function AttachmentsSection({
   const a = dict.attachments;
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deletePending, startDeleteTransition] = useTransition();
 
   return (
     <div>
@@ -51,16 +54,14 @@ export function AttachmentsSection({
                   {formatDate(file.createdAt, locale)}
                 </p>
               </div>
-              <form
-                action={async () => {
-                  if (!confirm(a.deleteConfirm)) return;
-                  await removeAttachment(file.id);
-                }}
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-xs text-red-600"
+                onClick={() => setDeleteTarget(file.id)}
               >
-                <Button type="submit" variant="ghost" className="text-xs text-red-600">
-                  {dict.common.delete}
-                </Button>
-              </form>
+                {dict.common.delete}
+              </Button>
             </li>
           ))}
         </ul>
@@ -101,6 +102,24 @@ export function AttachmentsSection({
       >
         {uploading ? "…" : a.upload}
       </Button>
+
+      <ConfirmDialog
+        open={deleteTarget != null}
+        onClose={() => setDeleteTarget(null)}
+        title={dict.common.confirmTitle}
+        message={a.deleteConfirm}
+        confirmLabel={dict.common.delete}
+        cancelLabel={dict.common.cancel}
+        pending={deletePending}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          const id = deleteTarget;
+          startDeleteTransition(async () => {
+            await removeAttachment(id);
+            setDeleteTarget(null);
+          });
+        }}
+      />
     </div>
   );
 }

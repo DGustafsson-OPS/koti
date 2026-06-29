@@ -1,45 +1,36 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useI18n } from "@/components/locale-provider";
+import { disconnectKotiakkuAction } from "@/app/energy/actions";
 
-export function ConfirmDeleteForm({
-  action,
-  label,
-  confirmMessage,
-}: {
-  action: () => void | Promise<void>;
-  label: string;
-  confirmMessage: string;
-}) {
+export function KotiakkuDisconnectButton({ propertyId }: { propertyId: string }) {
   const { dict } = useI18n();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   return (
     <>
-      <Button
-        type="button"
-        variant="ghost"
-        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-        onClick={() => setOpen(true)}
-      >
-        {label}
+      <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={() => setOpen(true)}>
+        {dict.kotiakku.disconnect}
       </Button>
       <ConfirmDialog
         open={open}
         onClose={() => setOpen(false)}
         title={dict.common.confirmTitle}
-        message={confirmMessage}
-        confirmLabel={label}
+        message={dict.kotiakku.disconnectConfirm}
+        confirmLabel={dict.kotiakku.disconnect}
         cancelLabel={dict.common.cancel}
         pending={pending}
         onConfirm={() => {
           startTransition(async () => {
-            await action();
+            await disconnectKotiakkuAction(propertyId);
             setOpen(false);
+            router.refresh();
           });
         }}
       />

@@ -294,27 +294,46 @@ export function PropertyTabs({
   activeId,
   basePath,
   params = {},
+  alwaysShow = false,
+  connectedIds,
 }: {
   properties: { id: string; name: string }[];
   activeId?: string;
   basePath: string;
   params?: Record<string, string | undefined>;
+  alwaysShow?: boolean;
+  connectedIds?: string[];
 }) {
-  if (properties.length <= 1) return null;
+  if (properties.length <= 1 && !alwaysShow) return null;
 
   return (
-    <div className="flex gap-2 mb-8 flex-wrap">
+    <div className="flex gap-2 mb-6 flex-wrap">
       {properties.map((p) => (
         <Link
           key={p.id}
           href={queryUrl(basePath, { ...params, property: p.id })}
           className={cn(
-            "px-4 py-2 rounded-xl text-sm font-medium transition-all",
+            "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
             p.id === activeId
               ? "bg-brand-700 text-white shadow-sm"
               : "bg-surface text-stone-600 border border-stone-200 hover:border-brand-300 hover:text-brand-800"
           )}
         >
+          {connectedIds && (
+            <span
+              className={cn(
+                "w-2 h-2 rounded-full shrink-0",
+                connectedIds.includes(p.id)
+                  ? p.id === activeId
+                    ? "bg-green-300"
+                    : "bg-green-500"
+                  : p.id === activeId
+                    ? "bg-white/40"
+                    : "bg-stone-300"
+              )}
+              aria-hidden
+            />
+          )}
           {p.name}
         </Link>
       ))}

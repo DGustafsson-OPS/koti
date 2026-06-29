@@ -59,9 +59,6 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
         back={{ href: "/properties", label: dict.common.allProperties }}
         action={
           <div className="flex flex-wrap gap-2">
-            <ButtonLink href={`/properties/${id}/contractors`} variant="secondary">
-              {dict.contractors.title}
-            </ButtonLink>
             <ButtonLink href={`/properties/${id}/import`} variant="secondary">
               {dict.import.title}
             </ButtonLink>

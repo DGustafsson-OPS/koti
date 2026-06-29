@@ -20,6 +20,15 @@ import { eq, desc, asc, and, lte, gte, lt, or, like, sql, isNull } from "drizzle
 import { now, nextDueDate } from "@/lib/utils";
 import { v4 as uuid } from "uuid";
 import { revalidatePath } from "next/cache";
+import {
+  getKotiakkuLatest,
+  getKotiakkuRange,
+  validateKotiakkuApiKey,
+  type KotiakkuMeasurement,
+} from "@/lib/kotiakku";
+import { decryptSecret, encryptSecret } from "@/lib/secrets";
+
+export type { KotiakkuMeasurement };
 
 // ─── Properties ───────────────────────────────────────────────────────────────
 
@@ -785,11 +794,7 @@ export async function completeTask(data: {
 
   const ts = now();
   const eventId = uuid();
-  const contractorFields = await resolveContractorFields(
-    task.propertyId,
-    data.contractorId,
-    data.contractor
-  );
+  const contractorFields = await resolveContractorFields(data.contractorId, data.contractor);
 
   await db.insert(maintenanceEvents).values({
     id: eventId,
@@ -836,12 +841,8 @@ export async function completeTask(data: {
 
 // ─── Contractors ──────────────────────────────────────────────────────────────
 
-export async function getContractors(propertyId: string) {
-  return db
-    .select()
-    .from(contractors)
-    .where(eq(contractors.propertyId, propertyId))
-    .orderBy(asc(contractors.name));
+export async function getContractors() {
+  return db.select().from(contractors).orderBy(asc(contractors.name));
 }
 
 export async function getContractor(id: string) {
@@ -850,7 +851,6 @@ export async function getContractor(id: string) {
 }
 
 export async function createContractor(data: {
-  propertyId: string;
   name: string;
   specialty?: string;
   phone?: string;
@@ -861,7 +861,6 @@ export async function createContractor(data: {
   const ts = now();
   await db.insert(contractors).values({
     id,
-    propertyId: data.propertyId,
     name: data.name.trim(),
     specialty: data.specialty?.trim() || null,
     phone: data.phone?.trim() || null,
@@ -870,9 +869,9 @@ export async function createContractor(data: {
     createdAt: ts,
     updatedAt: ts,
   });
-  revalidatePath(`/properties/${data.propertyId}/contractors`);
-  revalidatePath(`/properties/${data.propertyId}`);
+  revalidatePath("/contractors");
   revalidatePath("/history");
+  revalidatePath("/tasks");
   return id;
 }
 
@@ -908,8 +907,7 @@ export async function updateContractor(
     .set({ contractor: name })
     .where(eq(maintenanceEvents.contractorId, id));
 
-  revalidatePath(`/properties/${contractor.propertyId}/contractors`);
-  revalidatePath(`/properties/${contractor.propertyId}`);
+  revalidatePath("/contractors");
   revalidatePath("/history");
 }
 
@@ -917,19 +915,14 @@ export async function deleteContractor(id: string) {
   const contractor = await getContractor(id);
   if (!contractor) throw new Error("Contractor not found");
   await db.delete(contractors).where(eq(contractors.id, id));
-  revalidatePath(`/properties/${contractor.propertyId}/contractors`);
-  revalidatePath(`/properties/${contractor.propertyId}`);
+  revalidatePath("/contractors");
   revalidatePath("/history");
 }
 
-async function resolveContractorFields(
-  propertyId: string,
-  contractorId?: string,
-  contractorText?: string
-) {
+async function resolveContractorFields(contractorId?: string, contractorText?: string) {
   if (contractorId) {
     const contractor = await getContractor(contractorId);
-    if (contractor && contractor.propertyId === propertyId) {
+    if (contractor) {
       return { contractorId: contractor.id, contractor: contractor.name };
     }
   }
@@ -957,11 +950,7 @@ export async function createMaintenanceEvent(data: {
 }) {
   const id = uuid();
   const ts = now();
-  const contractorFields = await resolveContractorFields(
-    data.propertyId,
-    data.contractorId,
-    data.contractor
-  );
+  const contractorFields = await resolveContractorFields(data.contractorId, data.contractor);
   await db.insert(maintenanceEvents).values({
     id,
     propertyId: data.propertyId,
@@ -1008,11 +997,7 @@ export async function updateMaintenanceEvent(
   const event = await getMaintenanceEvent(id);
   if (!event) throw new Error("Event not found");
 
-  const contractorFields = await resolveContractorFields(
-    event.propertyId,
-    data.contractorId,
-    data.contractor
-  );
+  const contractorFields = await resolveContractorFields(data.contractorId, data.contractor);
 
   await db
     .update(maintenanceEvents)
@@ -1421,3 +1406,69 @@ function revalidateAttachmentPaths(entityType: string, entityId: string) {
   if (entityType === "event") revalidatePath(`/events/${entityId}/edit`);
   if (entityType === "property") revalidatePath(`/properties/${entityId}`);
 }
+
+// ─── Elisa Kotiakku ───────────────────────────────────────────────────────────
+
+async function getKotiakkuApiKey(propertyId: string): Promise<string | null> {
+  const property = await getProperty(propertyId);
+  if (!property?.kotiakkuApiKeyEnc) return null;
+  return decryptSecret(property.kotiakkuApiKeyEnc);
+}
+
+export async function connectKotiakku(propertyId: string, apiKey: string) {
+  const trimmed = apiKey.trim();
+  if (!trimmed) throw new Error("API key is required");
+
+  await validateKotiakkuApiKey(trimmed);
+
+  const ts = now();
+  await db
+    .update(properties)
+    .set({
+      kotiakkuApiKeyEnc: await encryptSecret(trimmed),
+      kotiakkuConnectedAt: ts,
+      updatedAt: ts,
+    })
+    .where(eq(properties.id, propertyId));
+
+  revalidatePath(`/properties/${propertyId}`);
+  revalidatePath("/energy");
+  revalidatePath("/");
+}
+
+export async function disconnectKotiakku(propertyId: string) {
+  const ts = now();
+  await db
+    .update(properties)
+    .set({
+      kotiakkuApiKeyEnc: null,
+      kotiakkuConnectedAt: null,
+      updatedAt: ts,
+    })
+    .where(eq(properties.id, propertyId));
+
+  revalidatePath(`/properties/${propertyId}`);
+  revalidatePath("/energy");
+  revalidatePath("/");
+}
+
+export async function fetchPropertyKotiakkuLatest(
+  propertyId: string
+): Promise<KotiakkuMeasurement | null> {
+  const apiKey = await getKotiakkuApiKey(propertyId);
+  if (!apiKey) return null;
+  return getKotiakkuLatest(apiKey);
+}
+
+export async function fetchPropertyKotiakkuHistory(
+  propertyId: string,
+  hours = 24
+): Promise<KotiakkuMeasurement[]> {
+  const apiKey = await getKotiakkuApiKey(propertyId);
+  if (!apiKey) return [];
+
+  const startTime = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+  const data = await getKotiakkuRange(apiKey, startTime);
+  return data.slice(-48);
+}
+

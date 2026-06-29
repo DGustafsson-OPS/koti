@@ -1,4 +1,13 @@
-# Add inside the koti.tervakuja.fi server {} block, BEFORE "location /".
+# CloudPanel vhost notes for koti.tervakuja.fi
+#
+# 1. Enable HTTP/3 if QUIC listeners are present (listen 443 quic):
+#      http3 on;
+#    Having "listen 443 quic" + Alt-Svc: h3 but http3 off causes Chrome to
+#    warn "connection is not secure" even when the TLS certificate is valid.
+#
+# 2. Ensure both location blocks proxy with forwarded headers:
+#
+# Add inside the server {} block, BEFORE "location /".
 # CloudPanel's static-file regex catches /_next/*.css and /_next/*.js and
 # returns 404 unless these paths are proxied to the Next.js app.
 location ^~ /_next/ {
@@ -11,3 +20,13 @@ location ^~ /_next/ {
   proxy_set_header X-Forwarded-Proto $scheme;
   proxy_set_header Host $host;
 }
+
+# Main app proxy (CloudPanel may already include this — verify X-Forwarded-Proto):
+# location / {
+#   proxy_pass http://127.0.0.1:8088/;
+#   proxy_http_version 1.1;
+#   proxy_set_header X-Forwarded-Host $host;
+#   proxy_set_header X-Forwarded-Proto $scheme;
+#   proxy_set_header Host $host;
+#   ...
+# }

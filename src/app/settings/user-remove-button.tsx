@@ -5,14 +5,16 @@ import { Button } from "@/components/ui";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useI18n } from "@/components/locale-provider";
 
-export function ConfirmDeleteForm({
-  action,
+export function UserRemoveButton({
+  userId,
   label,
   confirmMessage,
+  action,
 }: {
-  action: () => void | Promise<void>;
+  userId: string;
   label: string;
   confirmMessage: string;
+  action: (formData: FormData) => Promise<void>;
 }) {
   const { dict } = useI18n();
   const [open, setOpen] = useState(false);
@@ -23,7 +25,7 @@ export function ConfirmDeleteForm({
       <Button
         type="button"
         variant="ghost"
-        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+        className="text-xs text-red-600"
         onClick={() => setOpen(true)}
       >
         {label}
@@ -38,7 +40,9 @@ export function ConfirmDeleteForm({
         pending={pending}
         onConfirm={() => {
           startTransition(async () => {
-            await action();
+            const formData = new FormData();
+            formData.set("userId", userId);
+            await action(formData);
             setOpen(false);
           });
         }}

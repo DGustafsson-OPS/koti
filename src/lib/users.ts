@@ -274,6 +274,38 @@ export async function createCredentialsUser(data: {
   return user!;
 }
 
+export async function setupCredentialsForPendingUser(
+  userId: string,
+  username: string,
+  password: string
+) {
+  const user = await getUserById(userId);
+  if (!user) throw new Error("User not found");
+  if (await userHasAccount(userId)) throw new Error("User already has an account");
+
+  const normalized = username.trim().toLowerCase();
+  if (normalized.length < 2) throw new Error("Username too short");
+  validatePassword(password);
+
+  if (await getCredentialsAccountByUsername(normalized)) {
+    throw new Error("Username already taken");
+  }
+
+  const hash = await hashPassword(password);
+  const ts = now();
+
+  await db.insert(accounts).values({
+    id: uuid(),
+    userId,
+    provider: CREDENTIALS_PROVIDER,
+    providerAccountId: normalized,
+    passwordHash: hash,
+    createdAt: ts,
+  });
+
+  revalidatePath("/settings");
+}
+
 async function setAccountPasswordHash(accountId: string, password: string, normalizedUsername?: string) {
   validatePassword(password);
   const hash = await hashPassword(password);

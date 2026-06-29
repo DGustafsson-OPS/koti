@@ -59,7 +59,10 @@ export default async function TasksPage({
   const properties = await getProperties();
   const activePropertyId = propertyId ?? properties[0]?.id;
 
-  const tasks = activePropertyId ? await getTasks(activePropertyId, filter) : [];
+  const [tasks, propertyContractors] = await Promise.all([
+    activePropertyId ? getTasks(activePropertyId, filter) : Promise.resolve([]),
+    getContractors(),
+  ]);
 
   const propertyRooms = activePropertyId
     ? await db.select().from(rooms).where(eq(rooms.propertyId, activePropertyId))
@@ -67,7 +70,6 @@ export default async function TasksPage({
   const propertyAssets = activePropertyId
     ? await db.select().from(assets).where(eq(assets.propertyId, activePropertyId))
     : [];
-  const propertyContractors = activePropertyId ? await getContractors(activePropertyId) : [];
 
   const ts = Math.floor(Date.now() / 1000);
 

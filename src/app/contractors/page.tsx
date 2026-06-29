@@ -1,29 +1,20 @@
-import { notFound } from "next/navigation";
-import { getProperty, getContractors } from "@/lib/queries";
+import { getContractors } from "@/lib/queries";
 import { PageContainer, PageHeader, Card, EmptyState, Panel, ButtonLink } from "@/components/ui";
 import { CreateContractorForm } from "@/components/forms/create-contractor-form";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 
-export default async function ContractorsPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ContractorsPage() {
   const locale = await getLocale();
   const dict = getDictionary(locale);
-  const { id } = await params;
-  const property = await getProperty(id);
-  if (!property) notFound();
-
-  const contractorList = await getContractors(id);
+  const contractorList = await getContractors();
 
   return (
     <PageContainer size="wide">
-      <PageHeader
-        title={dict.contractors.title}
-        subtitle={dict.contractors.subtitle}
-        back={{ href: `/properties/${id}`, label: property.name }}
-      />
+      <PageHeader title={dict.contractors.title} subtitle={dict.contractors.subtitle} />
 
       <Panel title={dict.contractors.add} className="mb-8">
-        <CreateContractorForm propertyId={id} />
+        <CreateContractorForm />
       </Panel>
 
       {contractorList.length === 0 ? (
@@ -51,7 +42,7 @@ export default async function ContractorsPage({ params }: { params: Promise<{ id
       )}
 
       <div className="mt-8">
-        <ButtonLink href={`/history?property=${id}`} variant="secondary">
+        <ButtonLink href="/history" variant="secondary">
           {dict.contractors.viewHistory}
         </ButtonLink>
       </div>

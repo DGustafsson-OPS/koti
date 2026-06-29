@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/auth";
-import { exportAssetsCsv, exportTasksCsv, exportMaintenanceCsv } from "@/lib/export-data";
+import { exportAssetsCsv, exportTasksCsv, exportRoomsCsv, exportMaterialsCsv, exportMaintenanceCsv } from "@/lib/export-data";
 
 export async function GET(
   request: NextRequest,
@@ -28,6 +28,12 @@ export async function GET(
   } else if (type === "tasks") {
     csv = await exportTasksCsv(propertyId);
     filename = "koti-tasks.csv";
+  } else if (type === "rooms") {
+    csv = await exportRoomsCsv(propertyId);
+    filename = "koti-rooms.csv";
+  } else if (type === "materials") {
+    csv = await exportMaterialsCsv(propertyId);
+    filename = "koti-materials.csv";
   } else if (type === "maintenance") {
     csv = await exportMaintenanceCsv(propertyId, year);
     filename = year ? `koti-maintenance-${year}.csv` : "koti-maintenance.csv";

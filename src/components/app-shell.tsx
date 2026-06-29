@@ -13,6 +13,8 @@ import {
   Menu,
   X,
   LogOut,
+  HardHat,
+  Zap,
 } from "lucide-react";
 import { logoutAction } from "@/app/login/actions";
 import { cn } from "@/lib/utils";
@@ -26,6 +28,8 @@ function buildLinks(labels: NavLabels) {
     { href: "/properties", label: labels.properties, icon: Home },
     { href: "/tasks", label: labels.tasks, icon: CheckSquare },
     { href: "/history", label: labels.history, icon: History },
+    { href: "/contractors", label: labels.contractors, icon: HardHat },
+    { href: "/energy", label: labels.energy, icon: Zap },
     { href: "/search", label: labels.search, icon: Search },
     { href: "/settings", label: labels.settings, icon: Settings },
   ];

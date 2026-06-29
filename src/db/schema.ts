@@ -45,6 +45,8 @@ export const properties = mysqlTable("properties", {
   yearBuilt: int("year_built"),
   sizeSqm: double("size_sqm"),
   notes: text("notes"),
+  kotiakkuApiKeyEnc: text("kotiakku_api_key_enc"),
+  kotiakkuConnectedAt: int("kotiakku_connected_at"),
   createdAt: int("created_at").notNull(),
   updatedAt: int("updated_at").notNull(),
 });
@@ -198,23 +200,16 @@ export const tasks = mysqlTable(
   ]
 );
 
-export const contractors = mysqlTable(
-  "contractors",
-  {
-    id: varchar("id", { length: 36 }).primaryKey(),
-    propertyId: varchar("property_id", { length: 36 })
-      .notNull()
-      .references(() => properties.id, { onDelete: "cascade" }),
-    name: varchar("name", { length: 255 }).notNull(),
-    specialty: varchar("specialty", { length: 128 }),
-    phone: varchar("phone", { length: 64 }),
-    email: varchar("email", { length: 255 }),
-    notes: text("notes"),
-    createdAt: int("created_at").notNull(),
-    updatedAt: int("updated_at").notNull(),
-  },
-  (t) => [index("idx_contractors_property").on(t.propertyId)]
-);
+export const contractors = mysqlTable("contractors", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  specialty: varchar("specialty", { length: 128 }),
+  phone: varchar("phone", { length: 64 }),
+  email: varchar("email", { length: 255 }),
+  notes: text("notes"),
+  createdAt: int("created_at").notNull(),
+  updatedAt: int("updated_at").notNull(),
+});
 
 export const maintenanceEvents = mysqlTable(
   "maintenance_events",
